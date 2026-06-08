@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Sidebar from './components/Sidebar'
 
 function App() {
   // Authentication states
@@ -7,17 +8,32 @@ function App() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  
+  // Navigation State
+  const [activeMenu, setActiveMenu] = useState('dashboard')
+  const [userRole, setUserRole] = useState('admin') // Default to admin for this test
 
-  // Ohm's Law Simulator states
-  const [voltage, setVoltage] = useState(12) // Default 12V
-  const [resistance, setResistance] = useState(24) // Default 24 Ohm
+  // Mock Database for Admin Dashboard Counts
+  const [muridList, setMuridList] = useState([
+    { nim: 'S001', nama_siswa: 'Alfian Muhaimin', id_kelas: 1 },
+    { nim: 'S002', nama_siswa: 'Budi Santoso', id_kelas: 1 },
+    { nim: 'S003', nama_siswa: 'Citra Kirana', id_kelas: 2 },
+    { nim: 'S004', nama_siswa: 'Dodi Hermawan', id_kelas: 2 },
+    { nim: 'S005', nama_siswa: 'Elsa Putri', id_kelas: 3 },
+  ])
 
-  // Calculate current: I = V / R
-  const currentAmpere = (voltage / resistance).toFixed(3)
+  const [guruList, setGuruList] = useState([
+    { nip: 'G001', nama_guru: 'Drs. Supriyadi' },
+    { nip: 'G002', nama_guru: 'Indah Lestari, S.Pd' },
+    { nip: 'G003', nama_guru: 'Rahmat Hidayat, M.T' },
+  ])
 
-  // Calculate electron animation speed based on current
-  // Higher current = faster speed (smaller animation duration)
-  const animationDuration = Math.max(0.15, 4 / Math.max(0.01, parseFloat(currentAmpere)))
+  const [kelasList, setKelasList] = useState([
+    { id_kelas: 1, nama_kelas: 'Kelas X - IPA 1', nip_guru: 'G001' },
+    { id_kelas: 2, nama_kelas: 'Kelas X - IPA 2', nip_guru: 'G002' },
+    { id_kelas: 3, nama_kelas: 'Kelas XI - IPA 1', nip_guru: 'G003' },
+    { id_kelas: 4, nama_kelas: 'Kelas XI - IPA 2', nip_guru: 'G001' },
+  ])
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -29,6 +45,8 @@ function App() {
 
     if (username === 'admin' && password === 'admin') {
       setIsLoggedIn(true)
+      setUserRole('admin')
+      setActiveMenu('dashboard') // Reset to default menu on login
       setError('')
     } else {
       setError('Username atau password salah!')
@@ -40,6 +58,145 @@ function App() {
     setUsername('')
     setPassword('')
     setError('')
+  }
+
+  // Render content based on active menu item
+  const renderContent = () => {
+    switch (activeMenu) {
+      case 'dashboard':
+        return (
+          <>
+            <div className="welcome-banner">
+              <h2 className="welcome-title">Selamat Datang, Admin!</h2>
+              <p className="welcome-desc">
+                Portal Manajemen Smart Learning OHM. Gunakan menu sidebar untuk mengelola akun murid, guru, dan rombongan belajar (kelas) secara terstruktur.
+              </p>
+            </div>
+
+            {/* Statistics Row */}
+            <div className="stats-grid">
+              {/* Stat Murid */}
+              <div className="stat-card stat-card-murid">
+                <div className="stat-card-details">
+                  <span className="stat-card-title">Total Murid</span>
+                  <span className="stat-card-number">{muridList.length}</span>
+                </div>
+                <div className="stat-card-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Stat Guru */}
+              <div className="stat-card stat-card-guru">
+                <div className="stat-card-details">
+                  <span className="stat-card-title">Total Guru</span>
+                  <span className="stat-card-number">{guruList.length}</span>
+                </div>
+                <div className="stat-card-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Stat Kelas */}
+              <div className="stat-card stat-card-kelas">
+                <div className="stat-card-details">
+                  <span className="stat-card-title">Total Kelas</span>
+                  <span className="stat-card-number">{kelasList.length}</span>
+                </div>
+                <div className="stat-card-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Panel / System Information */}
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid rgba(226, 232, 240, 0.8)',
+              borderRadius: 'var(--radius-md)',
+              padding: '32px',
+              boxShadow: 'var(--shadow-sm)'
+            }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>
+                Tentang Sistem Smart Learning OHM
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '160%' }}>
+                Platform ini didesain untuk menyinkronkan data kuis siswa pada aplikasi web dengan data pembacaan fisik pada modul praktikum IoT. Sebagai administrator, Anda memegang hak akses penuh untuk mendaftarkan akun murid baru yang ingin berpartisipasi dalam praktikum, menetapkan guru pendamping pada masing-masing kelas, dan memastikan kelancaran database sebelum praktikum dimulai.
+              </p>
+            </div>
+          </>
+        )
+
+      case 'murid':
+        return (
+          <>
+            <div className="page-header">
+              <h2>Manajemen Akun Murid</h2>
+              <p>Kelola data pendaftaran murid, pencarian NIM, dan penempatan kelas mereka.</p>
+            </div>
+            <div className="placeholder-card">
+              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
+              </svg>
+              <h3>Halaman Murid</h3>
+              <p>Fitur CRUD (Tambah, Edit, Hapus) untuk data Murid akan dihubungkan ke database PostgreSQL Supabase pada langkah pengerjaan berikutnya.</p>
+            </div>
+          </>
+        )
+
+      case 'guru':
+        return (
+          <>
+            <div className="page-header">
+              <h2>Manajemen Akun Guru</h2>
+              <p>Kelola data guru pengampu mata pelajaran fisika beserta NIP untuk pemberian wewenang sesi soal.</p>
+            </div>
+            <div className="placeholder-card">
+              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+              <h3>Halaman Guru</h3>
+              <p>Fitur CRUD (Tambah, Edit, Hapus) untuk data Guru pengampu kelas akan dikembangkan pada langkah berikutnya.</p>
+            </div>
+          </>
+        )
+
+      case 'kelas':
+        return (
+          <>
+            <div className="page-header">
+              <h2>Manajemen Rombongan Belajar (Kelas)</h2>
+              <p>Buat kelompok kelas baru dan hubungkan kelas dengan guru penanggung jawab.</p>
+            </div>
+            <div className="placeholder-card">
+              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <h3>Halaman Kelas</h3>
+              <p>Fitur pembuatan dan pemetaan Kelas baru untuk praktikum Hukum Ohm akan ditambahkan pada tahap pengerjaan berikutnya.</p>
+            </div>
+          </>
+        )
+
+      default:
+        return <div>Halaman tidak ditemukan.</div>
+    }
   }
 
   return (
@@ -59,7 +216,6 @@ function App() {
               <div className="brand-logo-container">
                 <div className="spark"></div>
                 <svg className="brand-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  {/* Custom Ohm symbol & circuit theme icon */}
                   <path d="M4 18c1.5-1.5 2.5-4 2.5-6.5a5.5 5.5 0 1 1 11 0c0 2.5 1 5 2.5 6.5" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M3 18h4m10 0h4" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M12 2v2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -89,7 +245,7 @@ function App() {
                     id="username-input"
                     className="form-input"
                     type="text"
-                    placeholder="Masukkan username (contoh: admin)"
+                    placeholder="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                   />
@@ -107,7 +263,7 @@ function App() {
                     id="password-input"
                     className="form-input"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Masukkan password (contoh: admin)"
+                    placeholder="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -116,7 +272,7 @@ function App() {
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                   
-                  {/* Show/Hide password button */}
+                  {/* Show/Hide password toggle */}
                   {password && (
                     <button
                       type="button"
@@ -159,191 +315,22 @@ function App() {
                 </svg>
               </button>
             </form>
-
-            <div className="login-tip-container">
-              <svg className="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              <div className="tip-text">
-                <span className="tip-highlight">Tips Praktikum:</span> Masuk dengan username <code style={{background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)'}}>admin</code> dan sandi <code style={{background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)'}}>admin</code> untuk mengakses demo panel dashboard.
-              </div>
-            </div>
           </div>
         </div>
       ) : (
-        /* MAIN DASHBOARD SCREEN */
-        <div className="dashboard-layout">
-          {/* Header */}
-          <header className="nav-header">
-            <div className="nav-brand">
-              <div className="nav-logo-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M4 18c1.5-1.5 2.5-4 2.5-6.5a5.5 5.5 0 1 1 11 0c0 2.5 1 5 2.5 6.5M3 18h4m10 0h4" />
-                </svg>
-              </div>
-              <span className="nav-title">Smart Learning OHM</span>
-            </div>
-            
-            <div className="nav-user">
-              <div className="user-badge">
-                <span className="user-avatar-dot"></span>
-                <span>{username} (Administrator)</span>
-              </div>
-              <button className="logout-btn" onClick={handleLogout}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                </svg>
-                Keluar
-              </button>
-            </div>
-          </header>
+        /* ADMIN PANEL VIEW (WITH REUSABLE SIDEBAR) */
+        <div className="admin-layout-wrapper">
+          <Sidebar
+            activeMenu={activeMenu}
+            setActiveMenu={setActiveMenu}
+            role={userRole}
+            userName={username}
+            onLogout={handleLogout}
+          />
 
-          {/* Main Content */}
-          <main className="dashboard-main">
-            <div className="welcome-banner">
-              <h2 className="welcome-title">Halo, Selamat Datang di Smart Learning OHM!</h2>
-              <p className="welcome-desc">
-                Portal belajar integrasi Web dan IoT. Di sini, Anda dapat memantau alat praktikum siswa, mengelola sesi kuis/soal secara real-time, dan memantau rekapitulasi nilai kuis serta nilai ketepatan alat praktikum.
-              </p>
-            </div>
-
-            {/* Content Grid */}
-            <div className="dashboard-grid">
-              
-              {/* Left Column: Interactive Calculator (Wow element) */}
-              <div className="ohm-widget">
-                <div className="section-title">
-                  <svg className="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                  </svg>
-                  <h3>Simulator Mandiri Hukum Ohm</h3>
-                </div>
-                <p className="widget-intro">
-                  Gunakan slider di bawah untuk mengatur Tegangan ($V$) dan Hambatan ($R$) dan amati bagaimana Arus listrik ($I$) berubah secara langsung sesuai teori $I = V / R$.
-                </p>
-
-                <div className="equation-visual">
-                  <div className="equation-display">
-                    <span className="val-v">{voltage}V</span>
-                    <span style={{ margin: '0 8px', color: 'var(--text-light)' }}>=</span>
-                    <span className="val-i">{currentAmpere}A</span>
-                    <span style={{ margin: '0 8px', color: 'var(--text-light)' }}>&times;</span>
-                    <span className="val-r">{resistance}&Omega;</span>
-                  </div>
-                  <div className="equation-calculation-detail">
-                    Arus Listrik (I) = {voltage} Volt / {resistance} Ohm = <span className="val-i">{currentAmpere} Ampere</span>
-                  </div>
-                </div>
-
-                <div className="slider-controls">
-                  <div className="control-item">
-                    <div className="control-label-row lbl-v">
-                      <span>Tegangan (V)</span>
-                      <span className="control-val-badge">{voltage} Volt</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="24"
-                      className="custom-slider slider-v"
-                      value={voltage}
-                      onChange={(e) => setVoltage(parseInt(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="control-item">
-                    <div className="control-label-row lbl-r">
-                      <span>Hambatan (R)</span>
-                      <span className="control-val-badge">{resistance} Ohm</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="100"
-                      className="custom-slider slider-r"
-                      value={resistance}
-                      onChange={(e) => setResistance(parseInt(e.target.value))}
-                    />
-                  </div>
-                </div>
-
-                {/* Animated circuit visualization */}
-                <div className="circuit-sim">
-                  <h4 className="circuit-sim-title">Visualisasi Aliran Elektron (Arus Listrik)</h4>
-                  <div className="circuit-sim-container">
-                    <div 
-                      className="electron-flow" 
-                      style={{ animationDuration: `${animationDuration}s` }}
-                    ></div>
-                    <div className="sim-metric val-v">{voltage} V</div>
-                    <div className="sim-metric val-r">{resistance} &Omega;</div>
-                    <div className="sim-metric val-i" style={{ fontWeight: 800 }}>{currentAmpere} A</div>
-                  </div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>
-                    *Semakin tinggi arus listrik (Ampere), aliran elektron pada visualisasi di atas akan mengalir semakin cepat.
-                  </p>
-                </div>
-              </div>
-
-              {/* Right Column: Roles Overview */}
-              <div>
-                <div className="section-title">
-                  <svg className="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  <h3>Panduan Akses Role</h3>
-                </div>
-                
-                <div className="roles-card-container">
-                  {/* Admin Card */}
-                  <div className="role-card-item role-admin">
-                    <div className="role-badge-icon">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                    </div>
-                    <div className="role-card-content">
-                      <h3>Role Admin (Aktif)</h3>
-                      <p>Bertugas mendaftarkan & mengelola akun Siswa, Guru, serta memetakan pembagian Kelas.</p>
-                    </div>
-                  </div>
-
-                  {/* Guru Card */}
-                  <div className="role-card-item role-guru">
-                    <div className="role-badge-icon">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                      </svg>
-                    </div>
-                    <div className="role-card-content">
-                      <h3>Role Guru</h3>
-                      <p>Mengatur pembuatan sesi kuis, memasukkan parameter target praktikum IoT, dan menilai esai analisis siswa.</p>
-                    </div>
-                  </div>
-
-                  {/* Siswa Card */}
-                  <div className="role-card-item role-siswa">
-                    <div className="role-badge-icon">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                        <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
-                      </svg>
-                    </div>
-                    <div className="role-card-content">
-                      <h3>Role Siswa</h3>
-                      <p>Mengerjakan soal teori di web, melakukan kalibrasi nilai Ohm-Volt-Ampere di perangkat IoT fisik, dan menulis analisis.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
+          {/* Main Content Area */}
+          <main className="main-content-area">
+            {renderContent()}
           </main>
         </div>
       )}
