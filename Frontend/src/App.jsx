@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function App() {
   // Authentication states
@@ -8,60 +10,110 @@ function App() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   
+  // User Session detail states
+  const [userRole, setUserRole] = useState('') // 'admin' | 'guru' | 'siswa'
+  const [displayName, setDisplayName] = useState('')
+  const [token, setToken] = useState('')
+
   // Navigation State
   const [activeMenu, setActiveMenu] = useState('dashboard')
-  const [userRole, setUserRole] = useState('admin') // Default to admin for this test
 
-  // Mock Database for Admin Dashboard Counts
-  const [muridList, setMuridList] = useState([
-    { nim: 'S001', nama_siswa: 'Alfian Muhaimin', id_kelas: 1 },
-    { nim: 'S002', nama_siswa: 'Budi Santoso', id_kelas: 1 },
-    { nim: 'S003', nama_siswa: 'Citra Kirana', id_kelas: 2 },
-    { nim: 'S004', nama_siswa: 'Dodi Hermawan', id_kelas: 2 },
-    { nim: 'S005', nama_siswa: 'Elsa Putri', id_kelas: 3 },
-  ])
+  // Mock Database for Admin Dashboard Counts (fallback UI representation)
+  const [muridCount, setMuridCount] = useState(5)
+  const [guruCount, setGuruCount] = useState(3)
+  const [kelasCount, setKelasCount] = useState(4)
 
-  const [guruList, setGuruList] = useState([
-    { nip: 'G001', nama_guru: 'Drs. Supriyadi' },
-    { nip: 'G002', nama_guru: 'Indah Lestari, S.Pd' },
-    { nip: 'G003', nama_guru: 'Rahmat Hidayat, M.T' },
-  ])
+  // Verify token on load to support session persistence
+  useEffect(() => {
+    const verifySession = async () => {
+      const savedToken = localStorage.getItem('ohm_session_token');
+      if (savedToken) {
+        try {
+          const res = await fetch(`${API_URL}/me`, {
+            headers: {
+              'Authorization': `Bearer ${savedToken}`
+            }
+          });
+          const data = await res.json();
+          if (res.ok && data.user) {
+            setToken(savedToken);
+            setIsLoggedIn(true);
+            setUserRole(data.user.role);
+            setDisplayName(data.user.name);
+            setUsername(data.user.username);
+          } else {
+            // Token is invalid/expired
+            localStorage.removeItem('ohm_session_token');
+          }
+        } catch (err) {
+          console.error('Session check failed:', err);
+        }
+      }
+      setIsLoading(false);
+    };
+    verifySession();
+  }, []);
 
-  const [kelasList, setKelasList] = useState([
-    { id_kelas: 1, nama_kelas: 'Kelas X - IPA 1', nip_guru: 'G001' },
-    { id_kelas: 2, nama_kelas: 'Kelas X - IPA 2', nip_guru: 'G002' },
-    { id_kelas: 3, nama_kelas: 'Kelas XI - IPA 1', nip_guru: 'G003' },
-    { id_kelas: 4, nama_kelas: 'Kelas XI - IPA 2', nip_guru: 'G001' },
-  ])
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
+    setError('')
     
     if (!username.trim() || !password.trim()) {
-      setError('Username dan password harus diisi!')
+      setError('Username/NIP/NIM dan password harus diisi!')
       return
     }
 
-    if (username === 'admin' && password === 'admin') {
-      setIsLoggedIn(true)
-      setUserRole('admin')
-      setActiveMenu('dashboard') // Reset to default menu on login
-      setError('')
-    } else {
-      setError('Username atau password salah!')
+    setIsLoggingIn(true);
+
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || 'Login gagal!');
+      }
+
+      // Save token in localStorage
+      localStorage.setItem('ohm_session_token', data.token);
+      
+      // Update session states
+      setToken(data.token);
+      setIsLoggedIn(true);
+      setUserRole(data.user.role);
+      setDisplayName(data.user.name);
+      setUsername(data.user.username);
+      setActiveMenu('dashboard');
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Koneksi ke server gagal!');
+    } finally {
+      setIsLoggingIn(false);
     }
   }
 
   const handleLogout = () => {
-    setIsLoggedIn(false)
-    setUsername('')
-    setPassword('')
-    setError('')
+    localStorage.removeItem('ohm_session_token');
+    setIsLoggedIn(false);
+    setToken('');
+    setUserRole('');
+    setDisplayName('');
+    setUsername('');
+    setPassword('');
+    setError('');
   }
 
-  // Render content based on active menu item
-  const renderContent = () => {
+  // Render Admin Dashboard and Pages
+  const renderAdminContent = () => {
     switch (activeMenu) {
       case 'dashboard':
         return (
@@ -75,11 +127,10 @@ function App() {
 
             {/* Statistics Row */}
             <div className="stats-grid">
-              {/* Stat Murid */}
               <div className="stat-card stat-card-murid">
                 <div className="stat-card-details">
                   <span className="stat-card-title">Total Murid</span>
-                  <span className="stat-card-number">{muridList.length}</span>
+                  <span className="stat-card-number">{muridCount}</span>
                 </div>
                 <div className="stat-card-icon">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -89,11 +140,10 @@ function App() {
                 </div>
               </div>
 
-              {/* Stat Guru */}
               <div className="stat-card stat-card-guru">
                 <div className="stat-card-details">
                   <span className="stat-card-title">Total Guru</span>
-                  <span className="stat-card-number">{guruList.length}</span>
+                  <span className="stat-card-number">{guruCount}</span>
                 </div>
                 <div className="stat-card-icon">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -103,11 +153,10 @@ function App() {
                 </div>
               </div>
 
-              {/* Stat Kelas */}
               <div className="stat-card stat-card-kelas">
                 <div className="stat-card-details">
                   <span className="stat-card-title">Total Kelas</span>
-                  <span className="stat-card-number">{kelasList.length}</span>
+                  <span className="stat-card-number">{kelasCount}</span>
                 </div>
                 <div className="stat-card-icon">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -120,7 +169,6 @@ function App() {
               </div>
             </div>
 
-            {/* Quick Actions Panel / System Information */}
             <div style={{
               background: '#ffffff',
               border: '1px solid rgba(226, 232, 240, 0.8)',
@@ -150,7 +198,7 @@ function App() {
                 <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
                 <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
               </svg>
-              <h3>Halaman Murid</h3>
+              <h3>Halaman Murid (Admin)</h3>
               <p>Fitur CRUD (Tambah, Edit, Hapus) untuk data Murid akan dihubungkan ke database PostgreSQL Supabase pada langkah pengerjaan berikutnya.</p>
             </div>
           </>
@@ -168,7 +216,7 @@ function App() {
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
               </svg>
-              <h3>Halaman Guru</h3>
+              <h3>Halaman Guru (Admin)</h3>
               <p>Fitur CRUD (Tambah, Edit, Hapus) untuk data Guru pengampu kelas akan dikembangkan pada langkah berikutnya.</p>
             </div>
           </>
@@ -188,7 +236,7 @@ function App() {
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
-              <h3>Halaman Kelas</h3>
+              <h3>Halaman Kelas (Admin)</h3>
               <p>Fitur pembuatan dan pemetaan Kelas baru untuk praktikum Hukum Ohm akan ditambahkan pada tahap pengerjaan berikutnya.</p>
             </div>
           </>
@@ -197,6 +245,254 @@ function App() {
       default:
         return <div>Halaman tidak ditemukan.</div>
     }
+  }
+
+  // Render Guru Dashboard and Pages
+  const renderGuruContent = () => {
+    switch (activeMenu) {
+      case 'dashboard':
+        return (
+          <>
+            <div className="welcome-banner" style={{ background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)' }}>
+              <h2 className="welcome-title">Selamat Datang, {displayName}!</h2>
+              <p className="welcome-desc">
+                Ruang Kerja Guru - Smart Learning OHM. Di sini Anda dapat memantau pengerjaan kuis siswa, memberikan penilaian analisis laporan praktikum, serta membuat sesi soal baru.
+              </p>
+            </div>
+
+            {/* Quick stats placeholder for guru */}
+            <div className="stats-grid">
+              <div className="stat-card stat-card-guru">
+                <div className="stat-card-details">
+                  <span className="stat-card-title">Kelas Diampu</span>
+                  <span className="stat-card-number">2</span>
+                </div>
+                <div className="stat-card-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="stat-card stat-card-murid">
+                <div className="stat-card-details">
+                  <span className="stat-card-title">Siswa Aktif</span>
+                  <span className="stat-card-number">38</span>
+                </div>
+                <div className="stat-card-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="stat-card stat-card-kelas">
+                <div className="stat-card-details">
+                  <span className="stat-card-title">Perlu Dinilai</span>
+                  <span className="stat-card-number">5</span>
+                </div>
+                <div className="stat-card-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'penilaian':
+        return (
+          <>
+            <div className="page-header">
+              <h2>Penilaian Hasil Praktikum & Kuis</h2>
+              <p>Periksa hasil ketepatan data sensor IoT siswa, hitung kesesuaian nilai kuis teori, dan berikan nilai pada laporan analisis.</p>
+            </div>
+            <div className="placeholder-card">
+              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+              <h3>Halaman Penilaian (Guru)</h3>
+              <p>Modul pemeriksaan dan penilaian hasil kuis & analisis siswa akan ditambahkan pada tahap pengerjaan backend.</p>
+            </div>
+          </>
+        )
+
+      case 'sesi_soal':
+        return (
+          <>
+            <div className="page-header">
+              <h2>Manajemen Sesi Soal & Praktikum</h2>
+              <p>Buat sesi praktikum baru untuk kelas Anda, atur parameter nilai hambatan (Ohm) dan tegangan (Volt) yang ditargetkan.</p>
+            </div>
+            <div className="placeholder-card">
+              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              <h3>Halaman Sesi Soal (Guru)</h3>
+              <p>Pembuatan sesi kuis baru dan manajemen parameter penugasan soal akan dihubungkan ke backend pada tahap berikutnya.</p>
+            </div>
+          </>
+        )
+
+      default:
+        return <div>Halaman tidak ditemukan.</div>
+    }
+  }
+
+  // Render Siswa Dashboard and Pages
+  const renderSiswaContent = () => {
+    switch (activeMenu) {
+      case 'dashboard':
+        return (
+          <>
+            <div className="welcome-banner" style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%)' }}>
+              <h2 className="welcome-title">Halo, Selamat Belajar {displayName}!</h2>
+              <p className="welcome-desc">
+                Portal Praktikum Mandiri Siswa. Pelajari materi Hukum Ohm, kerjakan soal kuis, dan kalibrasi nilai Ohm, Volt, serta Ampere menggunakan alat IoT praktikum fisik.
+              </p>
+            </div>
+
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid rgba(226, 232, 240, 0.8)',
+              borderRadius: 'var(--radius-md)',
+              padding: '32px',
+              boxShadow: 'var(--shadow-sm)',
+              marginBottom: '32px'
+            }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
+                Langkah Melakukan Praktikum Hukum Ohm
+              </h3>
+              <ul style={{ 
+                fontSize: '14px', 
+                color: 'var(--text-muted)', 
+                lineHeight: '180%',
+                paddingLeft: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <li>Masuk ke menu <strong>Materi</strong> untuk memahami teori kelistrikan dan rumus Hukum Ohm.</li>
+                <li>Buka menu <strong>Soal</strong> di sidebar untuk melihat tugas praktikum yang diberikan oleh gurumu.</li>
+                <li>Pahami parameter target Ohm dan Volt yang diberikan pada soal Anda.</li>
+                <li>Gunakan perangkat keras IoT fisik Anda untuk memutar potensiometer hingga nilai hambatan (Ohm) dan tegangan (Volt) pada sensor sesuai dengan target soal.</li>
+                <li>Setelah nilai pada IoT sesuai, kirimkan hasil pembacaan IoT tersebut ke sistem dan tuliskan analisis/kesimpulan Anda.</li>
+              </ul>
+            </div>
+          </>
+        )
+
+      case 'materi':
+        return (
+          <>
+            <div className="page-header">
+              <h2>Materi Pembelajaran Hukum Ohm</h2>
+              <p>Pelajari konsep dasar Tegangan, Hambatan, dan Arus Listrik serta rumus Hukum Ohm sebelum memulai kuis dan praktikum.</p>
+            </div>
+            <div className="placeholder-card">
+              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+              <h3>Halaman Materi Pembelajaran (Siswa)</h3>
+              <p>Materi interaktif tentang Hukum Ohm (teks, gambar, dan simulasi kelistrikan) akan ditampilkan di sini pada tahap pengembangan berikutnya.</p>
+            </div>
+          </>
+        )
+
+      case 'soal':
+        return (
+          <>
+            <div className="page-header">
+              <h2>Kuis & Praktikum Hukum Ohm</h2>
+              <p>Lihat parameter target soal Anda, kemudian atur knob hambatan dan tegangan pada modul IoT fisik.</p>
+            </div>
+            <div className="placeholder-card">
+              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <h3>Halaman Lembar Soal (Siswa)</h3>
+              <p>Form pengerjaan soal dan tombol sinkronisasi data sensor IoT (HiveMQ MQTT) akan diintegrasikan pada langkah berikutnya.</p>
+            </div>
+          </>
+        )
+
+      case 'nilai':
+        return (
+          <>
+            <div className="page-header">
+              <h2>Laporan Nilai Anda</h2>
+              <p>Pantau rekapitulasi nilai kuis teori, nilai ketepatan praktikum IoT, nilai analisis, dan umpan balik dari guru pengampu.</p>
+            </div>
+            <div className="placeholder-card">
+              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              <h3>Halaman Nilai Siswa</h3>
+              <p>Visualisasi grafik nilai kuis dan nilai praktikum IoT Anda akan ditampilkan di sini setelah pengerjaan dinilai oleh Guru.</p>
+            </div>
+          </>
+        )
+
+      default:
+        return <div>Halaman tidak ditemukan.</div>
+    }
+  }
+
+  // Choose content based on user role
+  const renderRoleContent = () => {
+    switch (userRole) {
+      case 'admin':
+        return renderAdminContent()
+      case 'guru':
+        return renderGuruContent()
+      case 'siswa':
+        return renderSiswaContent()
+      default:
+        return <div>Role tidak valid.</div>
+    }
+  }
+
+  // Render a clean modern loading screen during session validation
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #eff6ff 0%, #f5f3ff 50%, #fffbeb 100%)'
+      }}>
+        <svg 
+          style={{ animation: 'spin 1s linear infinite', color: 'var(--primary)', width: '40px', height: '40px', marginBottom: '16px' }}
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="3"
+        >
+          <circle cx="12" cy="12" r="10" strokeOpacity="0.2"/>
+          <path d="M4 12a8 8 0 0 1 8-8" strokeLinecap="round"/>
+        </svg>
+        <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-medium)', fontFamily: 'var(--font-sans)' }}>
+          Memverifikasi Sesi...
+        </span>
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}} />
+      </div>
+    );
   }
 
   return (
@@ -239,7 +535,7 @@ function App() {
               )}
 
               <div className="form-group">
-                <label className="form-label" htmlFor="username-input">Username</label>
+                <label className="form-label" htmlFor="username-input">Username / NIP / NIM</label>
                 <div className="input-wrapper">
                   <input
                     id="username-input"
@@ -248,6 +544,7 @@ function App() {
                     placeholder="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    disabled={isLoggingIn}
                   />
                   <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -266,6 +563,7 @@ function App() {
                     placeholder="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoggingIn}
                   />
                   <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -290,6 +588,7 @@ function App() {
                         justifyContent: 'center'
                       }}
                       aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                      disabled={isLoggingIn}
                     >
                       {showPassword ? (
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -307,30 +606,50 @@ function App() {
                 </div>
               </div>
 
-              <button className="submit-btn" type="submit">
-                <span>Masuk Ke Sistem</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
+              <button className="submit-btn" type="submit" disabled={isLoggingIn}>
+                {isLoggingIn ? (
+                  <>
+                    <svg 
+                      style={{ animation: 'spin 1s linear infinite' }}
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="3"
+                    >
+                      <circle cx="12" cy="12" r="10" strokeOpacity="0.2"/>
+                      <path d="M4 12a8 8 0 0 1 8-8" strokeLinecap="round"/>
+                    </svg>
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Masuk Ke Sistem</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </>
+                )}
               </button>
             </form>
           </div>
         </div>
       ) : (
-        /* ADMIN PANEL VIEW (WITH REUSABLE SIDEBAR) */
+        /* MAIN WORKSPACE WRAPPER (WITH SIDEBAR) */
         <div className="admin-layout-wrapper">
           <Sidebar
             activeMenu={activeMenu}
             setActiveMenu={setActiveMenu}
             role={userRole}
-            userName={username}
+            userName={displayName}
             onLogout={handleLogout}
           />
 
           {/* Main Content Area */}
           <main className="main-content-area">
-            {renderContent()}
+            {renderRoleContent()}
           </main>
         </div>
       )}
