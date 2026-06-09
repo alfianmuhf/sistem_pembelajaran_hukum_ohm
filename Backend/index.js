@@ -1,3 +1,4 @@
+// Smart Learning OHM - Backend REST API Service
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
