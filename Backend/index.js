@@ -603,6 +603,35 @@ app.post('/api/sesi/utama', authenticateToken, async (req, res) => {
 
     if (error) throw error;
 
+    // Auto-generate soal for all students in the class
+    const { data: siswaData, error: siswaErr } = await supabase
+      .from('siswa')
+      .select('id_siswa')
+      .eq('id_kelas', id_kelas);
+
+    if (!siswaErr && siswaData && siswaData.length > 0) {
+      const fixedOhms = [220, 330, 470, 680];
+      const soalToInsert = [];
+
+      siswaData.forEach(siswa => {
+        fixedOhms.forEach(ohm => {
+          const volt = Math.floor(Math.random() * 9) + 3; // Random 3 to 11
+          const ampere = parseFloat((volt / ohm).toFixed(4));
+          soalToInsert.push({
+            id_sesi: data.id_sesi,
+            id_siswa: siswa.id_siswa,
+            ohm,
+            volt,
+            ampere
+          });
+        });
+      });
+
+      if (soalToInsert.length > 0) {
+        await supabase.from('soal').insert(soalToInsert);
+      }
+    }
+
     res.status(201).json({ message: 'Sesi Utama berhasil dibuat', sesi: data });
   } catch (error) {
     console.error('Error creating sesi utama:', error);
@@ -646,6 +675,35 @@ app.post('/api/sesi/remidi', authenticateToken, async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // Auto-generate soal for all students in the class
+    const { data: siswaData, error: siswaErr } = await supabase
+      .from('siswa')
+      .select('id_siswa')
+      .eq('id_kelas', id_kelas);
+
+    if (!siswaErr && siswaData && siswaData.length > 0) {
+      const fixedOhms = [220, 330, 470, 680];
+      const soalToInsert = [];
+
+      siswaData.forEach(siswa => {
+        fixedOhms.forEach(ohm => {
+          const volt = Math.floor(Math.random() * 9) + 3; // Random 3 to 11
+          const ampere = parseFloat((volt / ohm).toFixed(4));
+          soalToInsert.push({
+            id_sesi: data.id_sesi,
+            id_siswa: siswa.id_siswa,
+            ohm,
+            volt,
+            ampere
+          });
+        });
+      });
+
+      if (soalToInsert.length > 0) {
+        await supabase.from('soal').insert(soalToInsert);
+      }
+    }
 
     res.status(201).json({ message: 'Sesi Remidi berhasil dibuat', sesi: data });
   } catch (error) {
@@ -694,6 +752,61 @@ app.delete('/api/sesi/:id', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error deleting sesi:', error);
     res.status(500).json({ message: 'Terjadi kesalahan saat menghapus sesi.' });
+  }
+});
+
+// --- KUIS SISWA ---
+
+// GET Sesi Aktif Siswa
+app.get('/api/kuis/aktif', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'siswa') {
+    return res.status(403).json({ message: 'Akses ditolak.' });
+  }
+
+  try {
+    // Get the student's class
+    const { data: siswaData, error: siswaErr } = await supabase
+      .from('siswa')
+      .select('id_kelas')
+      .eq('id_siswa', req.user.id)
+      .single();
+
+    if (siswaErr || !siswaData?.id_kelas) {
+      return res.json(null); // No class
+    }
+
+    // Find active session for this class (tenggang_waktu > now)
+    const now = new Date().toISOString();
+    const { data: sesiData, error: sesiErr } = await supabase
+      .from('sesi')
+      .select('*')
+      .eq('id_kelas', siswaData.id_kelas)
+      .gte('tenggang_waktu', now)
+      .order('tenggang_waktu', { ascending: true }) // closest deadline first
+      .limit(1)
+      .single();
+
+    if (sesiErr || !sesiData) {
+      return res.json(null); // No active session
+    }
+
+    // Find the generated questions for this student and this session
+    const { data: soalData, error: soalErr } = await supabase
+      .from('soal')
+      .select('*')
+      .eq('id_sesi', sesiData.id_sesi)
+      .eq('id_siswa', req.user.id)
+      .order('id_soal', { ascending: true });
+
+    if (soalErr) throw soalErr;
+
+    res.json({
+      sesi: sesiData,
+      soal: soalData
+    });
+  } catch (error) {
+    console.error('Error fetching kuis aktif:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil kuis aktif.' });
   }
 });
 

@@ -4,6 +4,7 @@ import GuruAdmin from './components/GuruAdmin'
 import KelasAdmin from './components/KelasAdmin'
 import SiswaAdmin from './components/SiswaAdmin'
 import SesiGuru from './components/SesiGuru'
+import SiswaMateri from './components/SiswaMateri'
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 function App() {
@@ -375,23 +376,7 @@ function App() {
         )
 
       case 'soal':
-        return (
-          <>
-            <div className="page-header">
-              <h2>Kuis & Praktikum Hukum Ohm</h2>
-              <p>Lihat parameter target soal Anda, kemudian atur knob hambatan dan tegangan pada modul IoT fisik.</p>
-            </div>
-            <div className="placeholder-card">
-              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <h3>Halaman Lembar Soal (Siswa)</h3>
-              <p>Form pengerjaan soal dan tombol sinkronisasi data sensor IoT (HiveMQ MQTT) akan diintegrasikan pada langkah berikutnya.</p>
-            </div>
-          </>
-        )
+        return <SiswaMateri />;
 
       case 'nilai':
         return (
