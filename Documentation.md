@@ -22,10 +22,20 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
 ## 2.5. Fitur yang Sudah Diimplementasikan (Fase 2: Guru Panel)
 - **Manajemen Sesi Soal & Praktikum (CRUD)**:
   - Pembuatan kuis sesi **Utama** (Nomor sesi digenerate otomatis berdasarkan kelas).
-  - Pembuatan kuis sesi **Remidi** (Langsung terikat dengan ID sesi utamanya).
   - List sesi otomatis melakukan *Grouping* per kelas.
-  - Sesi Remidi ditampilkan terstruktur (indentasi khusus) tepat di bawah Sesi Utama induknya.
   - Form dilengkapi *Dropdown* kelas dinamis (hanya menampilkan kelas yang diajar oleh guru tersebut) dan input Tanggal beserta Jam batas akhir pengerjaan.
+  - *Catatan: Fitur Sesi Remidi untuk sementara ditiadakan atas permintaan spesifik.*
+
+## 2.6. Fitur yang Sudah Diimplementasikan (Fase 3: Siswa Panel)
+- **Auto-Generate Soal Kuis (Backend)**:
+  - Setiap Sesi Utama dibuat oleh guru, backend akan otomatis membuat 4 soal berurutan (dengan Ohm: 220, 330, 470, 680) untuk *setiap siswa* di kelas tersebut. Voltase diacak dari 3 hingga 11 Volt.
+- **Halaman Daftar Kuis Aktif**:
+  - Validasi *Tenggang Waktu* secara akurat dengan sinkronisasi zona waktu (WIB / Asia/Jakarta) antara *database* dengan pengecekan waktu di *server backend*.
+  - Menampilkan sesi yang masih berjalan dalam bentuk kotak (Card) berisi informasi: Tipe Sesi, Tanggal Dibuat, dan Tenggang Waktu (Tutup). Sesi yang sudah melewati batas waktu akan otomatis hilang.
+- **Halaman Pengerjaan Soal (Split-Screen)**:
+  - **Kiri (Teori)**: Menampilkan 4 kotak soal perhitungan arus (Ampere) beserta input jawaban dan tombol "Simpan Jawaban" per nomor.
+  - **Kanan (Praktikum IoT)**: Menampilkan 4 kotak soal pembacaan aktual sensor, lengkap dengan tombol "Start/Stop Praktikum" per nomor, dan tombol simpan data.
+  - **Bawah (Analisis)**: Area *textarea* untuk mengetik laporan praktikum dan kesimpulan.
 
 ## 3. Database dan Relasi (Supabase PostgreSQL)
 Sistem ini menggunakan Supabase sebagai layanan *Database as a Service* (DBaaS). Tabel yang sudah terintegrasi sejauh ini:

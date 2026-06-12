@@ -639,78 +639,7 @@ app.post('/api/sesi/utama', authenticateToken, async (req, res) => {
   }
 });
 
-// POST Create Sesi Remidi
-app.post('/api/sesi/remidi', authenticateToken, async (req, res) => {
-  const { id_kelas, id_sesi_sebelum, tenggang_waktu } = req.body;
-  
-  if (!id_kelas || !id_sesi_sebelum || !tenggang_waktu) {
-    return res.status(400).json({ message: 'Kelas, Sesi Induk, dan tenggang waktu wajib diisi.' });
-  }
 
-  try {
-    const tanggal_pembuatan = new Date().toISOString().split('T')[0];
-
-    // Get the parent session's number
-    const { data: parentSesi, error: parentErr } = await supabase
-      .from('sesi')
-      .select('sesi')
-      .eq('id_sesi', id_sesi_sebelum)
-      .single();
-
-    if (parentErr) throw parentErr;
-
-    const { data, error } = await supabase
-      .from('sesi')
-      .insert([
-        {
-          id_kelas,
-          id_sesi_sebelum,
-          sesi: parentSesi.sesi,
-          tipe: 'Remidi',
-          tanggal_pembuatan,
-          tenggang_waktu
-        }
-      ])
-      .select('*, kelas(nama_kelas)')
-      .single();
-
-    if (error) throw error;
-
-    // Auto-generate soal for all students in the class
-    const { data: siswaData, error: siswaErr } = await supabase
-      .from('siswa')
-      .select('id_siswa')
-      .eq('id_kelas', id_kelas);
-
-    if (!siswaErr && siswaData && siswaData.length > 0) {
-      const fixedOhms = [220, 330, 470, 680];
-      const soalToInsert = [];
-
-      siswaData.forEach(siswa => {
-        fixedOhms.forEach(ohm => {
-          const volt = Math.floor(Math.random() * 9) + 3; // Random 3 to 11
-          const ampere = parseFloat((volt / ohm).toFixed(4));
-          soalToInsert.push({
-            id_sesi: data.id_sesi,
-            id_siswa: siswa.id_siswa,
-            ohm,
-            volt,
-            ampere
-          });
-        });
-      });
-
-      if (soalToInsert.length > 0) {
-        await supabase.from('soal').insert(soalToInsert);
-      }
-    }
-
-    res.status(201).json({ message: 'Sesi Remidi berhasil dibuat', sesi: data });
-  } catch (error) {
-    console.error('Error creating sesi remidi:', error);
-    res.status(500).json({ message: 'Terjadi kesalahan saat membuat sesi remidi.' });
-  }
-});
 
 // PUT Edit Sesi (Tenggang Waktu)
 app.put('/api/sesi/:id', authenticateToken, async (req, res) => {
@@ -775,7 +704,7 @@ app.get('/api/kuis/aktif', authenticateToken, async (req, res) => {
       return res.json(null); // No class
     }
 
-    // Find active session for this class (tenggang_waktu > now)
+    // Find active sessions for this class (tenggang_waktu > now)
     // Convert current UTC time to Asia/Jakarta (+7) to match the datetime-local format stored in DB
     const d = new Date();
     const offset = 7 * 60 * 60 * 1000; // +7 hours
@@ -786,31 +715,41 @@ app.get('/api/kuis/aktif', authenticateToken, async (req, res) => {
       .select('*')
       .eq('id_kelas', siswaData.id_kelas)
       .gte('tenggang_waktu', now)
-      .order('tenggang_waktu', { ascending: true }) // closest deadline first
-      .limit(1)
-      .single();
+      .order('tenggang_waktu', { ascending: true }); // closest deadline first
 
-    if (sesiErr || !sesiData) {
-      return res.json(null); // No active session
+    if (sesiErr || !sesiData || sesiData.length === 0) {
+      return res.json([]); // No active session
     }
 
-    // Find the generated questions for this student and this session
+    res.json(sesiData);
+  } catch (error) {
+    console.error('Error fetching kuis aktif:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil daftar kuis.' });
+  }
+});
+
+// GET Soal by ID Sesi
+app.get('/api/kuis/:id_sesi/soal', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'siswa') {
+    return res.status(403).json({ message: 'Akses ditolak.' });
+  }
+
+  const { id_sesi } = req.params;
+
+  try {
     const { data: soalData, error: soalErr } = await supabase
       .from('soal')
       .select('*')
-      .eq('id_sesi', sesiData.id_sesi)
+      .eq('id_sesi', id_sesi)
       .eq('id_siswa', req.user.id)
       .order('id_soal', { ascending: true });
 
     if (soalErr) throw soalErr;
 
-    res.json({
-      sesi: sesiData,
-      soal: soalData
-    });
+    res.json(soalData);
   } catch (error) {
-    console.error('Error fetching kuis aktif:', error);
-    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil kuis aktif.' });
+    console.error('Error fetching soal kuis:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil soal kuis.' });
   }
 });
 
