@@ -300,6 +300,109 @@ app.delete('/api/guru/:id', authenticateToken, async (req, res) => {
 });
 
 
+// --- CRUD KELAS ---
+
+// GET All Kelas
+app.get('/api/kelas', authenticateToken, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('kelas')
+      .select('id_kelas, nama_kelas, id_guru, guru(nama_guru)')
+      .order('id_kelas', { ascending: true });
+      
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching kelas:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data kelas.' });
+  }
+});
+
+// POST Create Kelas
+app.post('/api/kelas', authenticateToken, async (req, res) => {
+  const { nama_kelas, id_guru } = req.body;
+  if (!nama_kelas) {
+    return res.status(400).json({ message: 'Nama kelas wajib diisi' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('kelas')
+      .insert([
+        {
+          nama_kelas: nama_kelas,
+          id_guru: id_guru || null
+        }
+      ])
+      .select('id_kelas, nama_kelas, id_guru, guru(nama_guru)')
+      .single();
+
+    // Handle Unique Constraint Violation (Error Code 23505)
+    if (error) {
+      if (error.code === '23505') {
+         return res.status(400).json({ message: 'Nama kelas sudah terdaftar, silakan gunakan nama lain.' });
+      }
+      throw error;
+    }
+
+    res.status(201).json({ message: 'Kelas berhasil ditambahkan', kelas: data });
+  } catch (error) {
+    console.error('Error creating kelas:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat membuat kelas.' });
+  }
+});
+
+// PUT Update Kelas
+app.put('/api/kelas/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { nama_kelas, id_guru } = req.body;
+  
+  if (!nama_kelas) {
+    return res.status(400).json({ message: 'Nama kelas wajib diisi' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('kelas')
+      .update({
+        nama_kelas: nama_kelas,
+        id_guru: id_guru || null
+      })
+      .eq('id_kelas', id)
+      .select('id_kelas, nama_kelas, id_guru, guru(nama_guru)')
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+         return res.status(400).json({ message: 'Nama kelas sudah terdaftar, silakan gunakan nama lain.' });
+      }
+      throw error;
+    }
+
+    res.json({ message: 'Data kelas berhasil diperbarui', kelas: data });
+  } catch (error) {
+    console.error('Error updating kelas:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat memperbarui kelas.' });
+  }
+});
+
+// DELETE Kelas
+app.delete('/api/kelas/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { error } = await supabase
+      .from('kelas')
+      .delete()
+      .eq('id_kelas', id);
+
+    if (error) throw error;
+    res.json({ message: 'Kelas berhasil dihapus' });
+  } catch (error) {
+    console.error('Error deleting kelas:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat menghapus kelas.' });
+  }
+});
+
 // Root check endpoint
 app.get('/', (req, res) => {
   res.send('Backend API Smart Learning OHM is running.');

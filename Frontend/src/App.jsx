@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
 import GuruAdmin from './components/GuruAdmin'
-
+import KelasAdmin from './components/KelasAdmin'
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 function App() {
@@ -209,24 +209,7 @@ function App() {
         return <GuruAdmin />;
 
       case 'kelas':
-        return (
-          <>
-            <div className="page-header">
-              <h2>Manajemen Rombongan Belajar (Kelas)</h2>
-              <p>Buat kelompok kelas baru dan hubungkan kelas dengan guru penanggung jawab.</p>
-            </div>
-            <div className="placeholder-card">
-              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              <h3>Halaman Kelas (Admin)</h3>
-              <p>Fitur pembuatan dan pemetaan Kelas baru untuk praktikum Hukum Ohm akan ditambahkan pada tahap pengerjaan berikutnya.</p>
-            </div>
-          </>
-        )
+        return <KelasAdmin />;
 
       default:
         return <div>Halaman tidak ditemukan.</div>
