@@ -12,6 +12,7 @@ const SesiGuru = () => {
   const [isAddUtamaOpen, setIsAddUtamaOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [alertPopup, setAlertPopup] = useState({ isOpen: false, message: '', type: 'success' });
 
   // Form states
   const [addUtamaData, setAddUtamaData] = useState({ id_kelas: '', tenggang_waktu: '' });
@@ -185,9 +186,9 @@ const SesiGuru = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Gagal meng-generate soal');
-      alert(data.message);
+      setAlertPopup({ isOpen: true, message: data.message, type: 'success' });
     } catch (err) {
-      alert(err.message);
+      setAlertPopup({ isOpen: true, message: err.message, type: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -489,6 +490,44 @@ const SesiGuru = () => {
                 {isSubmitting ? 'Menghapus...' : 'Ya, Hapus Sesi'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Alert Popup */}
+      {alertPopup.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setAlertPopup({ ...alertPopup, isOpen: false })}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: '15px' }}>
+              {alertPopup.type === 'success' ? (
+                <div style={{ width: '60px', height: '60px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+              ) : (
+                <div style={{ width: '60px', height: '60px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                </div>
+              )}
+            </div>
+            <h3 style={{ margin: '0 0 10px 0', color: 'var(--text-main)' }}>
+              {alertPopup.type === 'success' ? 'Berhasil!' : 'Terjadi Kesalahan'}
+            </h3>
+            <p style={{ color: 'var(--text-medium)', marginBottom: '20px', lineHeight: '1.5' }}>
+              {alertPopup.message}
+            </p>
+            <button 
+              className="btn-primary" 
+              onClick={() => setAlertPopup({ ...alertPopup, isOpen: false })}
+              style={{ width: '100%', padding: '10px' }}
+            >
+              Tutup
+            </button>
           </div>
         </div>
       )}

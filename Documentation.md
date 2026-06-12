@@ -24,6 +24,7 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - Pembuatan kuis sesi **Utama** (Nomor sesi digenerate otomatis berdasarkan kelas).
   - List sesi otomatis melakukan *Grouping* per kelas.
   - Form dilengkapi *Dropdown* kelas dinamis (hanya menampilkan kelas yang diajar oleh guru tersebut) dan input Tanggal beserta Jam batas akhir pengerjaan.
+  - **Generate Soal Susulan (Siswa Baru)**: Tombol aksi cerdas di daftar sesi yang mengecek dan men-generate otomatis soal baru *hanya* untuk siswa yang baru dimasukkan ke kelas, tanpa memengaruhi siswa yang sudah memiliki soal.
   - *Catatan: Fitur Sesi Remidi untuk sementara ditiadakan atas permintaan spesifik.*
 
 ## 2.6. Fitur yang Sudah Diimplementasikan (Fase 3: Siswa Panel)
@@ -37,7 +38,11 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - **Kanan (Praktikum IoT)**: Menampilkan 4 kotak soal pembacaan aktual sensor, lengkap dengan tombol "Start/Stop Praktikum" per nomor, dan tombol simpan data.
   - **Bawah (Analisis)**: Area *textarea* untuk mengetik laporan praktikum dan kesimpulan.
 
-## 3. Database dan Relasi (Supabase PostgreSQL)
+## 3. Keamanan & Autentikasi (JWT)
+- **Otomatis Logout (Browser Close)**: Penyimpanan JWT menggunakan `sessionStorage` di sisi klien. Hal ini memastikan sesi login akan langsung terhapus dan pengguna ter-logout seketika saat jendela/tab *browser* ditutup.
+- **Batas Waktu (Token Expiry)**: Masa kedaluwarsa JWT di-set maksimal 3 Jam (`3h`) pada *backend*, mencegah penyalahgunaan token yang disalin walau *browser* belum ditutup.
+
+## 4. Database dan Relasi (Supabase PostgreSQL)
 Sistem ini menggunakan Supabase sebagai layanan *Database as a Service* (DBaaS). Tabel yang sudah terintegrasi sejauh ini:
 1. **`admin`**: Mengatur akses masuk untuk administrator utama.
 2. **`guru`**: 

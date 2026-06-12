@@ -200,21 +200,18 @@ app.post('/api/guru', authenticateToken, async (req, res) => {
     // 1. Generate NIP (YY020XXX)
     const currentYear = new Date().getFullYear().toString().slice(-2);
     
-    // Find highest NIP in DB for the current year
-    const { data: maxNipData, error: countErr } = await supabase
+    // Find highest id_guru in DB
+    const { data: maxIdData, error: countErr } = await supabase
       .from('guru')
-      .select('nip')
-      .like('nip', `${currentYear}020%`)
-      .order('nip', { ascending: false })
+      .select('id_guru')
+      .order('id_guru', { ascending: false })
       .limit(1);
 
     if (countErr) throw countErr;
 
     let nextSequence = 1;
-    if (maxNipData && maxNipData.length > 0) {
-      const lastNip = maxNipData[0].nip;
-      const lastSequence = parseInt(lastNip.slice(-3), 10);
-      nextSequence = lastSequence + 1;
+    if (maxIdData && maxIdData.length > 0) {
+      nextSequence = maxIdData[0].id_guru + 1;
     }
 
     const nipString = `${currentYear}020${nextSequence.toString().padStart(3, '0')}`;
