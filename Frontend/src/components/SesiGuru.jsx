@@ -172,6 +172,36 @@ const SesiGuru = () => {
     }
   };
 
+  // Handle Generate Missing Soal
+  const handleGenerateMissing = async (sesi) => {
+    setIsSubmitting(true);
+    try {
+      const token = sessionStorage.getItem('ohm_session_token');
+      const res = await fetch(`${API_URL}/sesi/${sesi.id_sesi}/generate-missing`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal meng-generate soal');
+      alert(data.message);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isExpired = (tenggang_waktu) => {
+    if (!tenggang_waktu) return true;
+    const d = new Date();
+    const offset = 7 * 60 * 60 * 1000;
+    const localDate = new Date(d.getTime() + offset);
+    const now = localDate.toISOString().replace('Z', '');
+    return tenggang_waktu < now;
+  };
+
   // --- GROUPING LOGIC ---
   const groupedSesi = sesiList.reduce((acc, sesi) => {
     const kelasName = sesi.kelas?.nama_kelas || 'Kelas Tidak Diketahui';
@@ -249,7 +279,9 @@ const SesiGuru = () => {
                       </td>
                     </tr>
                     
-                    {groupedSesi[className].map((utama) => (
+                    {groupedSesi[className].map((utama) => {
+                      const expired = isExpired(utama.tenggang_waktu);
+                      return (
                       <tr key={utama.id_sesi}>
                         <td style={{ fontWeight: 700, color: 'var(--text-main)' }}>
                           Sesi {utama.sesi}
@@ -263,6 +295,25 @@ const SesiGuru = () => {
                         <td style={{ fontWeight: 600 }}>{formatDate(utama.tenggang_waktu)}</td>
                         <td>
                           <div className="action-buttons">
+                            <button 
+                              className="btn-icon" 
+                              title={expired ? "Sesi Berakhir (Tidak Bisa Generate)" : "Generate Soal untuk Siswa Baru"}
+                              onClick={() => handleGenerateMissing(utama)}
+                              disabled={expired || isSubmitting}
+                              style={{ 
+                                background: expired ? 'rgba(156, 163, 175, 0.1)' : 'rgba(16, 185, 129, 0.1)', 
+                                color: expired ? 'var(--text-light)' : 'var(--success)',
+                                borderColor: 'transparent',
+                                opacity: expired ? 0.6 : 1,
+                                cursor: expired ? 'not-allowed' : 'pointer'
+                              }}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 2v6h-6"></path>
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                              </svg>
+                            </button>
                             <button className="btn-icon btn-edit" title="Edit Tenggang Waktu" onClick={() => openEditModal(utama)}>
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -278,7 +329,7 @@ const SesiGuru = () => {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </React.Fragment>
                 ))
               )}

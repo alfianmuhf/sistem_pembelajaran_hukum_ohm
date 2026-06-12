@@ -684,6 +684,93 @@ app.delete('/api/sesi/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// POST Generate Missing Soal
+app.post('/api/sesi/:id/generate-missing', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'guru') {
+    return res.status(403).json({ message: 'Akses ditolak.' });
+  }
+
+  const { id } = req.params;
+
+  try {
+    // 1. Get Session Info
+    const { data: sesi, error: sesiErr } = await supabase
+      .from('sesi')
+      .select('*')
+      .eq('id_sesi', id)
+      .single();
+
+    if (sesiErr || !sesi) {
+      return res.status(404).json({ message: 'Sesi tidak ditemukan.' });
+    }
+
+    // Check if expired
+    const d = new Date();
+    const offset = 7 * 60 * 60 * 1000;
+    const localDate = new Date(d.getTime() + offset);
+    const now = localDate.toISOString().replace('Z', '');
+    
+    if (sesi.tenggang_waktu < now) {
+      return res.status(400).json({ message: 'Sesi sudah berakhir, tidak dapat meng-generate soal.' });
+    }
+
+    // 2. Get All Siswa in the Class
+    const { data: allSiswa, error: siswaErr } = await supabase
+      .from('siswa')
+      .select('id_siswa')
+      .eq('id_kelas', sesi.id_kelas);
+
+    if (siswaErr || !allSiswa || allSiswa.length === 0) {
+      return res.status(400).json({ message: 'Tidak ada siswa di kelas ini.' });
+    }
+
+    // 3. Get Existing Soal for this Session
+    const { data: existingSoal, error: soalErr } = await supabase
+      .from('soal')
+      .select('id_siswa')
+      .eq('id_sesi', id);
+
+    if (soalErr) throw soalErr;
+
+    const existingSiswaIds = new Set(existingSoal.map(s => s.id_siswa));
+    
+    // 4. Find Missing Siswa
+    const missingSiswa = allSiswa.filter(s => !existingSiswaIds.has(s.id_siswa));
+
+    if (missingSiswa.length === 0) {
+      return res.status(200).json({ message: 'Semua siswa di kelas ini sudah mendapatkan soal.' });
+    }
+
+    // 5. Generate Soal
+    const fixedOhms = [220, 330, 470, 680];
+    const soalToInsert = [];
+
+    missingSiswa.forEach(siswa => {
+      fixedOhms.forEach(ohm => {
+        const volt = Math.floor(Math.random() * 9) + 3; // Random 3 to 11
+        const ampere = parseFloat((volt / ohm).toFixed(4));
+        soalToInsert.push({
+          id_sesi: id,
+          id_siswa: siswa.id_siswa,
+          ohm,
+          volt,
+          ampere
+        });
+      });
+    });
+
+    if (soalToInsert.length > 0) {
+      const { error: insertErr } = await supabase.from('soal').insert(soalToInsert);
+      if (insertErr) throw insertErr;
+    }
+
+    res.status(200).json({ message: `Berhasil meng-generate soal untuk ${missingSiswa.length} siswa baru.` });
+  } catch (error) {
+    console.error('Error generating missing soal:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat meng-generate soal.' });
+  }
+});
+
 // --- KUIS SISWA ---
 
 // GET Sesi Aktif Siswa
