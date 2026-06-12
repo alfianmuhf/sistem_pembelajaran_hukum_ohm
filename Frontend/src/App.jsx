@@ -4,7 +4,7 @@ import GuruAdmin from './components/GuruAdmin'
 import KelasAdmin from './components/KelasAdmin'
 import SiswaAdmin from './components/SiswaAdmin'
 import SesiGuru from './components/SesiGuru'
-import SiswaMateri from './components/SiswaMateri'
+import SiswaSoal from './components/SiswaSoal'
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 function App() {
@@ -376,7 +376,7 @@ function App() {
         )
 
       case 'soal':
-        return <SiswaMateri />;
+        return <SiswaSoal />;
 
       case 'nilai':
         return (

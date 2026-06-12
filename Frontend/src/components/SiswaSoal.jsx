@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
-const SiswaMateri = () => {
+const SiswaSoal = () => {
   const [kuisData, setKuisData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -14,8 +14,12 @@ const SiswaMateri = () => {
   
   // IoT Simulation States
   const [isIotConnected, setIsIotConnected] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSimulating, setIsSimulating] = useState({}); // { [id_soal]: boolean }
+  
+  // Saving states
+  const [isSavingTeori, setIsSavingTeori] = useState({});
+  const [isSavingPraktikum, setIsSavingPraktikum] = useState({});
+  const [isSavingAnalisis, setIsSavingAnalisis] = useState(false);
 
   useEffect(() => {
     const fetchKuis = async () => {
@@ -65,24 +69,46 @@ const SiswaMateri = () => {
   // Mock IoT toggle
   const toggleIot = () => {
     setIsIotConnected(!isIotConnected);
-    if (isSimulating) setIsSimulating(false);
+    // If disconnected, stop all simulations
+    if (isIotConnected) {
+      setIsSimulating({});
+    }
   };
 
-  // Mock Start Praktikum
-  const toggleSimulasi = () => {
+  // Mock Start/Stop Praktikum per question
+  const toggleSimulasi = (id_soal) => {
     if (!isIotConnected) {
       alert("Hubungkan ke IoT Broker terlebih dahulu!");
       return;
     }
-    setIsSimulating(!isSimulating);
+    setIsSimulating(prev => ({
+      ...prev,
+      [id_soal]: !prev[id_soal]
+    }));
   };
 
   // Handle Save (Mock)
-  const handleSave = () => {
-    setIsSaving(true);
+  const handleSaveTeori = (id_soal) => {
+    setIsSavingTeori(prev => ({ ...prev, [id_soal]: true }));
     setTimeout(() => {
-      setIsSaving(false);
-      alert('Tersimpan secara lokal (Mockup UI). Integrasi database untuk jawaban akan dilakukan di tahap selanjutnya.');
+      setIsSavingTeori(prev => ({ ...prev, [id_soal]: false }));
+      alert(`Jawaban teori Soal ${id_soal} tersimpan secara lokal (Mockup).`);
+    }, 800);
+  };
+
+  const handleSavePraktikum = (id_soal) => {
+    setIsSavingPraktikum(prev => ({ ...prev, [id_soal]: true }));
+    setTimeout(() => {
+      setIsSavingPraktikum(prev => ({ ...prev, [id_soal]: false }));
+      alert(`Data praktikum Soal ${id_soal} tersimpan secara lokal (Mockup).`);
+    }, 800);
+  };
+
+  const handleSaveAnalisis = () => {
+    setIsSavingAnalisis(true);
+    setTimeout(() => {
+      setIsSavingAnalisis(false);
+      alert('Analisis tersimpan secara lokal (Mockup).');
     }, 1000);
   };
 
@@ -141,16 +167,6 @@ const SiswaMateri = () => {
             Tutup: {formatDeadline(sesi.tenggang_waktu)}
           </p>
         </div>
-        <div>
-          <button 
-            className="btn-primary" 
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{ boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', padding: '12px 24px' }}
-          >
-            {isSaving ? 'Menyimpan...' : 'Simpan & Kumpulkan'}
-          </button>
-        </div>
       </div>
 
       {/* Main Split Content */}
@@ -187,17 +203,27 @@ const SiswaMateri = () => {
                 </div>
                 <div>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Jawaban Arus (I) Teoritis:</label>
-                  <div style={{ position: 'relative' }}>
-                    <input 
-                      type="number" 
-                      step="0.0001"
-                      placeholder="Contoh: 0.054"
-                      className="form-input" 
-                      style={{ paddingRight: '40px', background: '#fff' }}
-                      value={teoriAnswers[item.id_soal] || ''}
-                      onChange={(e) => handleTeoriChange(item.id_soal, e.target.value)}
-                    />
-                    <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-medium)', fontWeight: 600 }}>A</span>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                      <input 
+                        type="number" 
+                        step="0.0001"
+                        placeholder="Contoh: 0.054"
+                        className="form-input" 
+                        style={{ paddingRight: '40px', background: '#fff' }}
+                        value={teoriAnswers[item.id_soal] || ''}
+                        onChange={(e) => handleTeoriChange(item.id_soal, e.target.value)}
+                      />
+                      <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-medium)', fontWeight: 600 }}>A</span>
+                    </div>
+                    <button 
+                      className="btn-primary" 
+                      onClick={() => handleSaveTeori(item.id_soal)}
+                      disabled={isSavingTeori[item.id_soal]}
+                      style={{ padding: '8px 16px', fontSize: '13px' }}
+                    >
+                      {isSavingTeori[item.id_soal] ? 'Loading...' : 'Simpan'}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -207,77 +233,91 @@ const SiswaMateri = () => {
 
         {/* Right Column: Praktikum */}
         <div style={{ background: '#fff', borderRadius: 'var(--radius-lg)', padding: '24px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '2px solid var(--background)', paddingBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '8px', color: 'var(--success)' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                  <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                  <line x1="12" y1="20" x2="12.01" y2="20"></line>
-                </svg>
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '18px' }}>Praktikum IoT</h3>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-medium)' }}>Baca data asli dari sensor</p>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '2px solid var(--background)', paddingBottom: '16px' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '8px', color: 'var(--success)' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20"></line>
+              </svg>
             </div>
-            <button 
-              className={isSimulating ? "btn-secondary" : "btn-primary"} 
-              style={isSimulating ? { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'transparent' } : { background: 'var(--success)' }}
-              onClick={toggleSimulasi}
-            >
-              {isSimulating ? 'Stop Pembacaan' : 'Start Praktikum'}
-            </button>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '18px' }}>Praktikum IoT</h3>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-medium)' }}>Baca data asli dari sensor</p>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {soal.map((item, index) => (
-              <div key={`praktikum-${item.id_soal}`} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '16px', position: 'relative', overflow: 'hidden' }}>
-                {isSimulating && (
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'var(--success)', animation: 'pulse 1.5s infinite' }}></div>
-                )}
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-main)', display: 'flex', justifyContent: 'space-between' }}>
-                  Target Soal {index + 1}
-                  <span style={{ fontSize: '12px', background: 'var(--background)', padding: '2px 8px', borderRadius: '10px', color: 'var(--text-medium)' }}>
-                    R: {item.ohm}Ω | V: {item.volt}V
-                  </span>
-                </h4>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Volt (Bacaan Sensor)</label>
-                    <div style={{ position: 'relative' }}>
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        placeholder="Contoh: 5.12"
-                        className="form-input" 
-                        style={{ paddingRight: '35px' }}
-                        value={praktikumAnswers[item.id_soal]?.volt || ''}
-                        onChange={(e) => handlePraktikumChange(item.id_soal, 'volt', e.target.value)}
-                      />
-                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', fontSize: '14px' }}>V</span>
+            {soal.map((item, index) => {
+              const simulating = isSimulating[item.id_soal];
+              return (
+                <div key={`praktikum-${item.id_soal}`} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '16px', position: 'relative', overflow: 'hidden' }}>
+                  {simulating && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'var(--success)', animation: 'pulse 1.5s infinite' }}></div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      Target Soal {index + 1}
+                      <span style={{ fontSize: '12px', background: 'var(--background)', padding: '2px 8px', borderRadius: '10px', color: 'var(--text-medium)', fontWeight: 'normal' }}>
+                        R: {item.ohm}Ω | V: {item.volt}V
+                      </span>
+                    </h4>
+                    <button 
+                      className={simulating ? "btn-secondary" : "btn-primary"} 
+                      style={simulating ? { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'transparent', padding: '6px 12px', fontSize: '12px' } : { background: 'var(--success)', padding: '6px 12px', fontSize: '12px' }}
+                      onClick={() => toggleSimulasi(item.id_soal)}
+                    >
+                      {simulating ? 'Stop Pembacaan' : 'Start Praktikum'}
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Volt (Sensor)</label>
+                      <div style={{ position: 'relative' }}>
+                        <input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="5.12"
+                          className="form-input" 
+                          style={{ paddingRight: '30px' }}
+                          value={praktikumAnswers[item.id_soal]?.volt || ''}
+                          onChange={(e) => handlePraktikumChange(item.id_soal, 'volt', e.target.value)}
+                        />
+                        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', fontSize: '14px' }}>V</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Ampere (Sensor)</label>
+                      <div style={{ position: 'relative' }}>
+                        <input 
+                          type="number" 
+                          step="0.0001"
+                          placeholder="0.052"
+                          className="form-input" 
+                          style={{ paddingRight: '30px' }}
+                          value={praktikumAnswers[item.id_soal]?.ampere || ''}
+                          onChange={(e) => handlePraktikumChange(item.id_soal, 'ampere', e.target.value)}
+                        />
+                        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', fontSize: '14px' }}>A</span>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Ampere (Bacaan Sensor)</label>
-                    <div style={{ position: 'relative' }}>
-                      <input 
-                        type="number" 
-                        step="0.0001"
-                        placeholder="Contoh: 0.052"
-                        className="form-input" 
-                        style={{ paddingRight: '35px' }}
-                        value={praktikumAnswers[item.id_soal]?.ampere || ''}
-                        onChange={(e) => handlePraktikumChange(item.id_soal, 'ampere', e.target.value)}
-                      />
-                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', fontSize: '14px' }}>A</span>
-                    </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button 
+                      className="btn-primary" 
+                      onClick={() => handleSavePraktikum(item.id_soal)}
+                      disabled={isSavingPraktikum[item.id_soal]}
+                      style={{ padding: '8px 16px', fontSize: '13px' }}
+                    >
+                      {isSavingPraktikum[item.id_soal] ? 'Loading...' : 'Simpan Jawaban'}
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -303,8 +343,19 @@ const SiswaMateri = () => {
           placeholder="Ketik analisis Anda di sini..."
           value={analisisText}
           onChange={(e) => setAnalisisText(e.target.value)}
-          style={{ resize: 'vertical' }}
+          style={{ resize: 'vertical', marginBottom: '16px' }}
         ></textarea>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button 
+            className="btn-primary" 
+            onClick={handleSaveAnalisis}
+            disabled={isSavingAnalisis}
+            style={{ padding: '10px 20px' }}
+          >
+            {isSavingAnalisis ? 'Menyimpan...' : 'Simpan Analisis'}
+          </button>
+        </div>
       </div>
 
       {/* Floating IoT Indicator */}
@@ -349,4 +400,4 @@ const SiswaMateri = () => {
   );
 };
 
-export default SiswaMateri;
+export default SiswaSoal;
