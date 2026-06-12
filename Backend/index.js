@@ -533,6 +533,170 @@ app.delete('/api/siswa/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// --- CRUD SESI SOAL ---
+
+// GET All Sesi (Filtered for Guru)
+app.get('/api/sesi', authenticateToken, async (req, res) => {
+  try {
+    let query = supabase
+      .from('sesi')
+      .select('*, kelas!inner(nama_kelas, id_guru)');
+
+    // If user is a guru, only fetch their classes' sessions
+    if (req.user.role === 'guru') {
+      query = query.eq('kelas.id_guru', req.user.id);
+    }
+
+    const { data, error } = await query.order('tanggal_pembuatan', { ascending: false });
+      
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching sesi:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data sesi.' });
+  }
+});
+
+// POST Create Sesi Utama
+app.post('/api/sesi/utama', authenticateToken, async (req, res) => {
+  const { id_kelas, tenggang_waktu } = req.body;
+  
+  if (!id_kelas || !tenggang_waktu) {
+    return res.status(400).json({ message: 'Kelas dan tenggang waktu wajib diisi.' });
+  }
+
+  try {
+    // 1. Get current date (only date part for tanggal_pembuatan)
+    const tanggal_pembuatan = new Date().toISOString().split('T')[0];
+
+    // 2. Calculate next session number for this specific class
+    const { data: existingSesi, error: countErr } = await supabase
+      .from('sesi')
+      .select('sesi')
+      .eq('id_kelas', id_kelas)
+      .eq('tipe', 'Utama')
+      .order('sesi', { ascending: false })
+      .limit(1);
+
+    if (countErr) throw countErr;
+
+    let nextSesiNum = 1;
+    if (existingSesi && existingSesi.length > 0) {
+      nextSesiNum = Number(existingSesi[0].sesi) + 1;
+    }
+
+    // 3. Insert to DB
+    const { data, error } = await supabase
+      .from('sesi')
+      .insert([
+        {
+          id_kelas,
+          id_sesi_sebelum: null,
+          sesi: nextSesiNum,
+          tipe: 'Utama',
+          tanggal_pembuatan,
+          tenggang_waktu
+        }
+      ])
+      .select('*, kelas(nama_kelas)')
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ message: 'Sesi Utama berhasil dibuat', sesi: data });
+  } catch (error) {
+    console.error('Error creating sesi utama:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat membuat sesi utama.' });
+  }
+});
+
+// POST Create Sesi Remidi
+app.post('/api/sesi/remidi', authenticateToken, async (req, res) => {
+  const { id_kelas, id_sesi_sebelum, tenggang_waktu } = req.body;
+  
+  if (!id_kelas || !id_sesi_sebelum || !tenggang_waktu) {
+    return res.status(400).json({ message: 'Kelas, Sesi Induk, dan tenggang waktu wajib diisi.' });
+  }
+
+  try {
+    const tanggal_pembuatan = new Date().toISOString().split('T')[0];
+
+    // Get the parent session's number
+    const { data: parentSesi, error: parentErr } = await supabase
+      .from('sesi')
+      .select('sesi')
+      .eq('id_sesi', id_sesi_sebelum)
+      .single();
+
+    if (parentErr) throw parentErr;
+
+    const { data, error } = await supabase
+      .from('sesi')
+      .insert([
+        {
+          id_kelas,
+          id_sesi_sebelum,
+          sesi: parentSesi.sesi,
+          tipe: 'Remidi',
+          tanggal_pembuatan,
+          tenggang_waktu
+        }
+      ])
+      .select('*, kelas(nama_kelas)')
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ message: 'Sesi Remidi berhasil dibuat', sesi: data });
+  } catch (error) {
+    console.error('Error creating sesi remidi:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat membuat sesi remidi.' });
+  }
+});
+
+// PUT Edit Sesi (Tenggang Waktu)
+app.put('/api/sesi/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { tenggang_waktu } = req.body;
+  
+  if (!tenggang_waktu) {
+    return res.status(400).json({ message: 'Tenggang waktu wajib diisi.' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('sesi')
+      .update({ tenggang_waktu })
+      .eq('id_sesi', id)
+      .select('*, kelas(nama_kelas)')
+      .single();
+
+    if (error) throw error;
+
+    res.json({ message: 'Tenggang waktu berhasil diperbarui', sesi: data });
+  } catch (error) {
+    console.error('Error updating sesi:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat memperbarui tenggang waktu.' });
+  }
+});
+
+// DELETE Sesi
+app.delete('/api/sesi/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { error } = await supabase
+      .from('sesi')
+      .delete()
+      .eq('id_sesi', id);
+
+    if (error) throw error;
+    res.json({ message: 'Sesi berhasil dihapus' });
+  } catch (error) {
+    console.error('Error deleting sesi:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat menghapus sesi.' });
+  }
+});
+
 // Root check endpoint
 app.get('/', (req, res) => {
   res.send('Backend API Smart Learning OHM is running.');

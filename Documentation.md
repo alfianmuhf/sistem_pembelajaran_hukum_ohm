@@ -19,6 +19,14 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - Relasi penempatan kelas.
   - Tabel menggunakan sistem **Grouping** berdasarkan kelas asal, sehingga data ditampilkan secara hierarkis (urut per nama kelas).
 
+## 2.5. Fitur yang Sudah Diimplementasikan (Fase 2: Guru Panel)
+- **Manajemen Sesi Soal & Praktikum (CRUD)**:
+  - Pembuatan kuis sesi **Utama** (Nomor sesi digenerate otomatis berdasarkan kelas).
+  - Pembuatan kuis sesi **Remidi** (Langsung terikat dengan ID sesi utamanya).
+  - List sesi otomatis melakukan *Grouping* per kelas.
+  - Sesi Remidi ditampilkan terstruktur (indentasi khusus) tepat di bawah Sesi Utama induknya.
+  - Form dilengkapi *Dropdown* kelas dinamis (hanya menampilkan kelas yang diajar oleh guru tersebut) dan input Tanggal beserta Jam batas akhir pengerjaan.
+
 ## 3. Database dan Relasi (Supabase PostgreSQL)
 Sistem ini menggunakan Supabase sebagai layanan *Database as a Service* (DBaaS). Tabel yang sudah terintegrasi sejauh ini:
 1. **`admin`**: Mengatur akses masuk untuk administrator utama.
@@ -28,6 +36,10 @@ Sistem ini menggunakan Supabase sebagai layanan *Database as a Service* (DBaaS).
    - Kolom: `id_kelas` (PK), `nama_kelas` (Unique), `id_guru` (FK ke `guru`, opsi *Cascade/Set NULL*).
 4. **`siswa`**: 
    - Kolom: `id_siswa` (PK), `nim` (Unique), `nama_siswa`, `password`, `id_kelas` (FK ke `kelas`).
+5. **`sesi`**:
+   - Kolom: `id_sesi` (PK), `id_kelas` (FK), `id_sesi_sebelum` (FK *Self-referencing* untuk Remidi), `sesi` (Auto-numbering Sesi 1, 2, dst), `tipe` (Utama / Remidi), `tanggal_pembuatan`, `tenggang_waktu` (Timestamp).
+6. **`soal`**:
+   - Kolom: `id_soal` (PK), `id_sesi` (FK), `id_siswa` (FK), `ohm`, `volt`, `ampere`.
 
 ## 4. Tema Desain Frontend (UI/UX)
 Antarmuka pengguna (UI) dibangun dengan orientasi **Premium Design**:

@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import GuruAdmin from './components/GuruAdmin'
 import KelasAdmin from './components/KelasAdmin'
 import SiswaAdmin from './components/SiswaAdmin'
+import SesiGuru from './components/SesiGuru'
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 function App() {
@@ -305,21 +306,7 @@ function App() {
         )
 
       case 'sesi_soal':
-        return (
-          <>
-            <div className="page-header">
-              <h2>Manajemen Sesi Soal & Praktikum</h2>
-              <p>Buat sesi praktikum baru untuk kelas Anda, atur parameter nilai hambatan (Ohm) dan tegangan (Volt) yang ditargetkan.</p>
-            </div>
-            <div className="placeholder-card">
-              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-              <h3>Halaman Sesi Soal (Guru)</h3>
-              <p>Pembuatan sesi kuis baru dan manajemen parameter penugasan soal akan dihubungkan ke backend pada tahap berikutnya.</p>
-            </div>
-          </>
-        )
+        return <SesiGuru />;
 
       default:
         return <div>Halaman tidak ditemukan.</div>
