@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
 import GuruAdmin from './components/GuruAdmin'
 import KelasAdmin from './components/KelasAdmin'
+import SiswaAdmin from './components/SiswaAdmin'
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 function App() {
@@ -188,22 +189,7 @@ function App() {
         )
 
       case 'murid':
-        return (
-          <>
-            <div className="page-header">
-              <h2>Manajemen Akun Murid</h2>
-              <p>Kelola data pendaftaran murid, pencarian NIM, dan penempatan kelas mereka.</p>
-            </div>
-            <div className="placeholder-card">
-              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
-              </svg>
-              <h3>Halaman Murid (Admin)</h3>
-              <p>Fitur CRUD (Tambah, Edit, Hapus) untuk data Murid akan dihubungkan ke database PostgreSQL Supabase pada langkah pengerjaan berikutnya.</p>
-            </div>
-          </>
-        )
+        return <SiswaAdmin />;
 
       case 'guru':
         return <GuruAdmin />;

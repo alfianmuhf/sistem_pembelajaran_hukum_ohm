@@ -403,6 +403,136 @@ app.delete('/api/kelas/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// --- CRUD SISWA ---
+
+// GET All Siswa
+app.get('/api/siswa', authenticateToken, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('siswa')
+      .select('id_siswa, nim, nama_siswa, id_kelas, kelas(nama_kelas)')
+      .order('id_siswa', { ascending: true });
+      
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching siswa:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data siswa.' });
+  }
+});
+
+// POST Create Siswa
+app.post('/api/siswa', authenticateToken, async (req, res) => {
+  const { nama_siswa, id_kelas } = req.body;
+  if (!nama_siswa) {
+    return res.status(400).json({ message: 'Nama siswa wajib diisi' });
+  }
+
+  try {
+    // 1. Generate NIM (YY010XXX)
+    const currentYear = new Date().getFullYear().toString().slice(-2);
+    
+    // Find highest id_siswa in DB
+    const { data: maxIdData, error: countErr } = await supabase
+      .from('siswa')
+      .select('id_siswa')
+      .order('id_siswa', { ascending: false })
+      .limit(1);
+
+    if (countErr) throw countErr;
+
+    let nextSequence = 1;
+    if (maxIdData && maxIdData.length > 0) {
+      nextSequence = maxIdData[0].id_siswa + 1;
+    }
+
+    const nimString = `${currentYear}010${nextSequence.toString().padStart(3, '0')}`;
+    
+    // 2. Hash Password (Default = NIM)
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(nimString, salt);
+
+    // 3. Insert to DB
+    const { data, error } = await supabase
+      .from('siswa')
+      .insert([
+        {
+          nim: nimString,
+          nama_siswa: nama_siswa,
+          password: hashedPassword,
+          id_kelas: id_kelas || null
+        }
+      ])
+      .select('id_siswa, nim, nama_siswa, id_kelas, kelas(nama_kelas)')
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+         return res.status(400).json({ message: 'NIM siswa sudah terdaftar, terjadi duplikasi.' });
+      }
+      throw error;
+    }
+
+    res.status(201).json({ message: 'Akun siswa berhasil dibuat', siswa: data });
+  } catch (error) {
+    console.error('Error creating siswa:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat membuat akun siswa.' });
+  }
+});
+
+// PUT Update Siswa
+app.put('/api/siswa/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { nama_siswa, id_kelas, password } = req.body;
+  
+  if (!nama_siswa) {
+    return res.status(400).json({ message: 'Nama siswa wajib diisi' });
+  }
+
+  try {
+    let updateData = {
+      nama_siswa,
+      id_kelas: id_kelas || null
+    };
+
+    if (password && password.trim() !== '') {
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    }
+
+    const { data, error } = await supabase
+      .from('siswa')
+      .update(updateData)
+      .eq('id_siswa', id)
+      .select('id_siswa, nim, nama_siswa, id_kelas, kelas(nama_kelas)')
+      .single();
+
+    if (error) throw error;
+
+    res.json({ message: 'Data siswa berhasil diperbarui', siswa: data });
+  } catch (error) {
+    console.error('Error updating siswa:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat memperbarui akun siswa.' });
+  }
+});
+
+// DELETE Siswa
+app.delete('/api/siswa/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { error } = await supabase
+      .from('siswa')
+      .delete()
+      .eq('id_siswa', id);
+
+    if (error) throw error;
+    res.json({ message: 'Akun siswa berhasil dihapus' });
+  } catch (error) {
+    console.error('Error deleting siswa:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat menghapus akun siswa.' });
+  }
+});
+
 // Root check endpoint
 app.get('/', (req, res) => {
   res.send('Backend API Smart Learning OHM is running.');
