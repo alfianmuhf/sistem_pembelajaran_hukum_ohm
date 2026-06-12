@@ -165,7 +165,7 @@ function App() {
 
             {/* Statistics Row */}
             <div className="stats-grid">
-              <div className="stat-card stat-card-murid">
+              <div className="stat-card stat-card-murid" onClick={() => setActiveMenu('murid')} style={{ cursor: 'pointer' }}>
                 <div className="stat-card-details">
                   <span className="stat-card-title">Total Murid</span>
                   <span className="stat-card-number">{muridCount}</span>
@@ -178,7 +178,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="stat-card stat-card-guru">
+              <div className="stat-card stat-card-guru" onClick={() => setActiveMenu('guru')} style={{ cursor: 'pointer' }}>
                 <div className="stat-card-details">
                   <span className="stat-card-title">Total Guru</span>
                   <span className="stat-card-number">{guruCount}</span>
@@ -195,7 +195,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="stat-card stat-card-kelas">
+              <div className="stat-card stat-card-kelas" onClick={() => setActiveMenu('kelas')} style={{ cursor: 'pointer' }}>
                 <div className="stat-card-details">
                   <span className="stat-card-title">Total Kelas</span>
                   <span className="stat-card-number">{kelasCount}</span>
