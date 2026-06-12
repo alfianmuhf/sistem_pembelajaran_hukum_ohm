@@ -776,7 +776,11 @@ app.get('/api/kuis/aktif', authenticateToken, async (req, res) => {
     }
 
     // Find active session for this class (tenggang_waktu > now)
-    const now = new Date().toISOString();
+    // Convert current UTC time to Asia/Jakarta (+7) to match the datetime-local format stored in DB
+    const d = new Date();
+    const offset = 7 * 60 * 60 * 1000; // +7 hours
+    const localDate = new Date(d.getTime() + offset);
+    const now = localDate.toISOString().replace('Z', '');
     const { data: sesiData, error: sesiErr } = await supabase
       .from('sesi')
       .select('*')
