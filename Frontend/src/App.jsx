@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
+import GuruAdmin from './components/GuruAdmin'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
@@ -205,22 +206,7 @@ function App() {
         )
 
       case 'guru':
-        return (
-          <>
-            <div className="page-header">
-              <h2>Manajemen Akun Guru</h2>
-              <p>Kelola data guru pengampu mata pelajaran fisika beserta NIP untuk pemberian wewenang sesi soal.</p>
-            </div>
-            <div className="placeholder-card">
-              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-              <h3>Halaman Guru (Admin)</h3>
-              <p>Fitur CRUD (Tambah, Edit, Hapus) untuk data Guru pengampu kelas akan dikembangkan pada langkah berikutnya.</p>
-            </div>
-          </>
-        )
+        return <GuruAdmin />;
 
       case 'kelas':
         return (

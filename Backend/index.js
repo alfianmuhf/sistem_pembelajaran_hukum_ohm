@@ -149,22 +149,156 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// REST API - Validate Token Endpoint (Me)
-app.get('/api/me', (req, res) => {
+// Middleware Authentication
+const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Tidak ada token, otorisasi ditolak!' });
   }
 
   const token = authHeader.split(' ')[1];
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    return res.status(200).json({ user: decoded });
+    req.user = decoded;
+    next();
   } catch (err) {
     return res.status(401).json({ message: 'Token tidak valid!' });
   }
+};
+
+// REST API - Validate Token Endpoint (Me)
+app.get('/api/me', authenticateToken, (req, res) => {
+  return res.status(200).json({ user: req.user });
 });
+
+// --- CRUD GURU ---
+
+// GET All Guru
+app.get('/api/guru', authenticateToken, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('guru')
+      .select('id_guru, nip, nama_guru, is_active')
+      .order('id_guru', { ascending: true });
+      
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching guru:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data guru.' });
+  }
+});
+
+// POST Create Guru
+app.post('/api/guru', authenticateToken, async (req, res) => {
+  const { nama_guru } = req.body;
+  if (!nama_guru) {
+    return res.status(400).json({ message: 'Nama guru wajib diisi' });
+  }
+
+  try {
+    // 1. Generate NIP (YY020XXX)
+    const currentYear = new Date().getFullYear().toString().slice(-2);
+    
+    // Find highest NIP in DB for the current year
+    const { data: maxNipData, error: countErr } = await supabase
+      .from('guru')
+      .select('nip')
+      .like('nip', `${currentYear}020%`)
+      .order('nip', { ascending: false })
+      .limit(1);
+
+    if (countErr) throw countErr;
+
+    let nextSequence = 1;
+    if (maxNipData && maxNipData.length > 0) {
+      const lastNip = maxNipData[0].nip;
+      const lastSequence = parseInt(lastNip.slice(-3), 10);
+      nextSequence = lastSequence + 1;
+    }
+
+    const nipString = `${currentYear}020${nextSequence.toString().padStart(3, '0')}`;
+    
+    // 2. Hash Password (Default = NIP)
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(nipString, salt);
+
+    // 3. Insert to DB
+    const { data, error } = await supabase
+      .from('guru')
+      .insert([
+        {
+          nip: nipString,
+          nama_guru: nama_guru,
+          password: hashedPassword,
+          is_active: false
+        }
+      ])
+      .select('id_guru, nip, nama_guru, is_active')
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ message: 'Akun guru berhasil dibuat', guru: data });
+  } catch (error) {
+    console.error('Error creating guru:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat membuat akun guru.' });
+  }
+});
+
+// PUT Update Guru
+app.put('/api/guru/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { nama_guru, is_active, password } = req.body;
+  
+  if (!nama_guru) {
+    return res.status(400).json({ message: 'Nama guru wajib diisi' });
+  }
+
+  try {
+    let updateData = {
+      nama_guru,
+      is_active
+    };
+
+    if (password && password.trim() !== '') {
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    }
+
+    const { data, error } = await supabase
+      .from('guru')
+      .update(updateData)
+      .eq('id_guru', id)
+      .select('id_guru, nip, nama_guru, is_active')
+      .single();
+
+    if (error) throw error;
+
+    res.json({ message: 'Data guru berhasil diperbarui', guru: data });
+  } catch (error) {
+    console.error('Error updating guru:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat memperbarui akun guru.' });
+  }
+});
+
+// DELETE Guru
+app.delete('/api/guru/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { error } = await supabase
+      .from('guru')
+      .delete()
+      .eq('id_guru', id);
+
+    if (error) throw error;
+    res.json({ message: 'Akun guru berhasil dihapus' });
+  } catch (error) {
+    console.error('Error deleting guru:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat menghapus akun guru.' });
+  }
+});
+
 
 // Root check endpoint
 app.get('/', (req, res) => {
