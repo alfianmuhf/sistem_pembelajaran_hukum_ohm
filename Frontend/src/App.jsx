@@ -23,10 +23,12 @@ function App() {
   // Navigation State
   const [activeMenu, setActiveMenu] = useState('dashboard')
 
-  // Mock Database for Admin Dashboard Counts (fallback UI representation)
-  const [muridCount, setMuridCount] = useState(5)
-  const [guruCount, setGuruCount] = useState(3)
-  const [kelasCount, setKelasCount] = useState(4)
+  // Dashboard Stats
+  const [muridCount, setMuridCount] = useState(0)
+  const [guruCount, setGuruCount] = useState(0)
+  const [guruActiveCount, setGuruActiveCount] = useState(0)
+  const [guruInactiveCount, setGuruInactiveCount] = useState(0)
+  const [kelasCount, setKelasCount] = useState(0)
 
   // Verify token on load to support session persistence
   useEffect(() => {
@@ -58,6 +60,40 @@ function App() {
     };
     verifySession();
   }, []);
+
+  // Fetch Admin Dashboard Stats
+  useEffect(() => {
+    if (isLoggedIn && userRole === 'admin' && activeMenu === 'dashboard') {
+      const fetchStats = async () => {
+        try {
+          const headers = { 'Authorization': `Bearer ${token}` };
+          const [guruRes, kelasRes, siswaRes] = await Promise.all([
+            fetch(`${API_URL}/guru`, { headers }),
+            fetch(`${API_URL}/kelas`, { headers }),
+            fetch(`${API_URL}/siswa`, { headers })
+          ]);
+          
+          if (guruRes.ok) {
+            const data = await guruRes.json();
+            setGuruCount(data.length);
+            setGuruActiveCount(data.filter(g => g.is_active).length);
+            setGuruInactiveCount(data.filter(g => !g.is_active).length);
+          }
+          if (kelasRes.ok) {
+            const data = await kelasRes.json();
+            setKelasCount(data.length);
+          }
+          if (siswaRes.ok) {
+            const data = await siswaRes.json();
+            setMuridCount(data.length);
+          }
+        } catch (err) {
+          console.error('Failed to fetch stats:', err);
+        }
+      };
+      fetchStats();
+    }
+  }, [isLoggedIn, userRole, activeMenu, token]);
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -146,6 +182,10 @@ function App() {
                 <div className="stat-card-details">
                   <span className="stat-card-title">Total Guru</span>
                   <span className="stat-card-number">{guruCount}</span>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px', fontSize: '13px', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--success)' }}>{guruActiveCount} Aktif</span>
+                    <span style={{ color: 'var(--danger)' }}>{guruInactiveCount} Nonaktif</span>
+                  </div>
                 </div>
                 <div className="stat-card-icon">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -169,21 +209,6 @@ function App() {
                   </svg>
                 </div>
               </div>
-            </div>
-
-            <div style={{
-              background: '#ffffff',
-              border: '1px solid rgba(226, 232, 240, 0.8)',
-              borderRadius: 'var(--radius-md)',
-              padding: '32px',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>
-                Tentang Sistem Smart Learning OHM
-              </h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '160%' }}>
-                Platform ini didesain untuk menyinkronkan data kuis siswa pada aplikasi web dengan data pembacaan fisik pada modul praktikum IoT. Sebagai administrator, Anda memegang hak akses penuh untuk mendaftarkan akun murid baru yang ingin berpartisipasi dalam praktikum, menetapkan guru pendamping pada masing-masing kelas, dan memastikan kelancaran database sebelum praktikum dimulai.
-              </p>
             </div>
           </>
         )
