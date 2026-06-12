@@ -35,7 +35,7 @@ function App() {
   // Verify token on load to support session persistence
   useEffect(() => {
     const verifySession = async () => {
-      const savedToken = localStorage.getItem('ohm_session_token');
+      const savedToken = sessionStorage.getItem('ohm_session_token');
       if (savedToken) {
         try {
           const res = await fetch(`${API_URL}/me`, {
@@ -52,7 +52,7 @@ function App() {
             setUsername(data.user.username);
           } else {
             // Token is invalid/expired
-            localStorage.removeItem('ohm_session_token');
+            sessionStorage.removeItem('ohm_session_token');
           }
         } catch (err) {
           console.error('Session check failed:', err);
@@ -123,8 +123,8 @@ function App() {
         throw new Error(data.message || 'Login gagal!');
       }
 
-      // Save token in localStorage
-      localStorage.setItem('ohm_session_token', data.token);
+      // Save token in sessionStorage
+      sessionStorage.setItem('ohm_session_token', data.token);
       
       // Update session states
       setToken(data.token);
@@ -142,7 +142,7 @@ function App() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('ohm_session_token');
+    sessionStorage.removeItem('ohm_session_token');
     setIsLoggedIn(false);
     setToken('');
     setUserRole('');

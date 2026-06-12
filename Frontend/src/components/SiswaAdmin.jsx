@@ -23,7 +23,7 @@ const SiswaAdmin = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
       const [siswaRes, kelasRes] = await Promise.all([
@@ -57,7 +57,7 @@ const SiswaAdmin = () => {
     
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/siswa`, {
         method: 'POST',
         headers: {
@@ -100,7 +100,7 @@ const SiswaAdmin = () => {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/siswa/${editSiswaData.id_siswa}`, {
         method: 'PUT',
         headers: {
@@ -136,7 +136,7 @@ const SiswaAdmin = () => {
     if (!siswaToDelete) return;
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/siswa/${siswaToDelete.id_siswa}`, {
         method: 'DELETE',
         headers: {

@@ -22,7 +22,7 @@ const GuruAdmin = () => {
   const fetchGurus = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/guru`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -48,7 +48,7 @@ const GuruAdmin = () => {
     
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/guru`, {
         method: 'POST',
         headers: {
@@ -87,7 +87,7 @@ const GuruAdmin = () => {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/guru/${editGuruData.id_guru}`, {
         method: 'PUT',
         headers: {
@@ -118,7 +118,7 @@ const GuruAdmin = () => {
     if (!guruToDelete) return;
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/guru/${guruToDelete.id_guru}`, {
         method: 'DELETE',
         headers: {

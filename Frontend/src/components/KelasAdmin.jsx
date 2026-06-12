@@ -23,7 +23,7 @@ const KelasAdmin = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
       const [kelasRes, guruRes] = await Promise.all([
@@ -57,7 +57,7 @@ const KelasAdmin = () => {
     
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/kelas`, {
         method: 'POST',
         headers: {
@@ -99,7 +99,7 @@ const KelasAdmin = () => {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/kelas/${editKelasData.id_kelas}`, {
         method: 'PUT',
         headers: {
@@ -134,7 +134,7 @@ const KelasAdmin = () => {
     if (!kelasToDelete) return;
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/kelas/${kelasToDelete.id_kelas}`, {
         method: 'DELETE',
         headers: {

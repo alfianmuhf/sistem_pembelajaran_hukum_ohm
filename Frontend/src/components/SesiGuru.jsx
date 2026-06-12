@@ -41,7 +41,7 @@ const SesiGuru = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
       const [sesiRes, kelasRes] = await Promise.all([
@@ -79,7 +79,7 @@ const SesiGuru = () => {
     
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/sesi/utama`, {
         method: 'POST',
         headers: {
@@ -117,7 +117,7 @@ const SesiGuru = () => {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/sesi/${editSesiData.id_sesi}`, {
         method: 'PUT',
         headers: {
@@ -149,7 +149,7 @@ const SesiGuru = () => {
     if (!sesiToDelete) return;
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/sesi/${sesiToDelete.id_sesi}`, {
         method: 'DELETE',
         headers: {

@@ -30,7 +30,7 @@ const SiswaSoal = () => {
     const fetchSessions = async () => {
       setIsLoading(true);
       try {
-        const token = localStorage.getItem('ohm_session_token');
+        const token = sessionStorage.getItem('ohm_session_token');
         const res = await fetch(`${API_URL}/kuis/aktif`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -57,7 +57,7 @@ const SiswaSoal = () => {
     setIsLoadingSoal(true);
     setSoalList([]);
     try {
-      const token = localStorage.getItem('ohm_session_token');
+      const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/kuis/${sesi.id_sesi}/soal`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });

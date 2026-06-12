@@ -128,7 +128,7 @@ app.post('/api/login', async (req, res) => {
         name: displayName
       },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '3h' }
     );
 
     // Respond with user details and token
