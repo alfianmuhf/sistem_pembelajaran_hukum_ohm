@@ -311,3 +311,5 @@ app.listen(PORT, () => {
 });
 
 // Trigger Railway Deploy 1
+
+app.get('/api/testdeploy', (req, res) => res.send('Deploy success 2!'));
