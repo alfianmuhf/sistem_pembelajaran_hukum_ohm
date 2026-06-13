@@ -27,6 +27,12 @@ const PenilaianGuru = () => {
   const [collapsedClasses, setCollapsedClasses] = useState({});
   const [collapsedSessions, setCollapsedSessions] = useState({});
 
+  // Remidi States
+  const [selectedRemidi, setSelectedRemidi] = useState([]);
+  const [isRemidiModalOpen, setIsRemidiModalOpen] = useState(false);
+  const [remidiDeadline, setRemidiDeadline] = useState('');
+  const [isRemidiSubmitting, setIsRemidiSubmitting] = useState(false);
+
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
@@ -150,6 +156,66 @@ const PenilaianGuru = () => {
     }
   };
 
+  // Handle Toggle Remidi Checkbox
+  const handleToggleRemidi = (id_sesi, id_siswa) => {
+    setSelectedRemidi(prev => {
+      const exists = prev.find(item => item.id_sesi === id_sesi && item.id_siswa === id_siswa);
+      if (exists) {
+        return prev.filter(item => !(item.id_sesi === id_sesi && item.id_siswa === id_siswa));
+      } else {
+        return [...prev, { id_sesi, id_siswa }];
+      }
+    });
+  };
+
+  // Handle Submit Remidi
+  const handleSubmitRemidi = async (e) => {
+    e.preventDefault();
+    if (!remidiDeadline) return;
+    setIsRemidiSubmitting(true);
+    
+    try {
+      const token = sessionStorage.getItem('ohm_session_token');
+      
+      // Group by id_sesi
+      const grouped = selectedRemidi.reduce((acc, curr) => {
+         if (!acc[curr.id_sesi]) acc[curr.id_sesi] = [];
+         acc[curr.id_sesi].push(curr.id_siswa);
+         return acc;
+      }, {});
+
+      const promises = Object.keys(grouped).map(async (id_sesi) => {
+        const res = await fetch(`${API_URL}/sesi/remidi`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id_sesi_sebelum: id_sesi,
+            tenggang_waktu: remidiDeadline,
+            siswa_ids: grouped[id_sesi]
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Gagal membuat remidi');
+        return data;
+      });
+
+      await Promise.all(promises);
+      
+      showToast('Sesi Remidi berhasil dibuat!', 'success');
+      setIsRemidiModalOpen(false);
+      setSelectedRemidi([]);
+      setRemidiDeadline('');
+      fetchRekap(); // Refresh data
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setIsRemidiSubmitting(false);
+    }
+  };
+
   const isDeadlinePassedForDetail = selectedSesi ? isExpired(selectedSesi.tenggang_waktu) : false;
 
   return (
@@ -159,7 +225,16 @@ const PenilaianGuru = () => {
           <h2>Penilaian Hasil Praktikum & Kuis</h2>
           <p>Daftar seluruh siswa berdasarkan kelas dan sesi. Klik "Lihat Detail" untuk memeriksa dan menginput nilai manual.</p>
         </div>
-        <div>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {selectedRemidi.length > 0 && (
+            <button 
+              className="btn-primary" 
+              onClick={() => setIsRemidiModalOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--accent)' }}
+            >
+              Buat Sesi Remidi ({selectedRemidi.length})
+            </button>
+          )}
           <button className="btn-secondary" onClick={fetchRekap} disabled={isLoading} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 4 23 10 17 10"></polyline>
@@ -182,6 +257,7 @@ const PenilaianGuru = () => {
                 <th>Status Penilaian</th>
                 <th style={{ textAlign: 'center' }}>Total Nilai</th>
                 <th style={{ textAlign: 'center' }}>Aksi</th>
+                <th style={{ textAlign: 'center' }}>Pilih Remidi</th>
               </tr>
             </thead>
             <tbody>
@@ -217,7 +293,7 @@ const PenilaianGuru = () => {
                         style={{ background: 'rgba(59, 130, 246, 0.05)', cursor: 'pointer' }}
                         onClick={() => setCollapsedClasses(prev => ({...prev, [kelas.id_kelas]: !prev[kelas.id_kelas]}))}
                       >
-                        <td colSpan="5" style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--primary)', borderBottom: '2px solid rgba(59, 130, 246, 0.2)' }}>
+                        <td colSpan="6" style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--primary)', borderBottom: '2px solid rgba(59, 130, 246, 0.2)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
                               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -240,7 +316,7 @@ const PenilaianGuru = () => {
 
                       {!collapsedClasses[kelas.id_kelas] && (sesiKelas.length === 0 ? (
                         <tr>
-                          <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                          <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontStyle: 'italic' }}>
                             Belum ada sesi di kelas ini.
                           </td>
                         </tr>
@@ -254,7 +330,7 @@ const PenilaianGuru = () => {
                                 style={{ background: '#f8fafc', cursor: 'pointer' }}
                                 onClick={() => setCollapsedSessions(prev => ({...prev, [sesi.id_sesi]: !prev[sesi.id_sesi]}))}
                               >
-                                <td colSpan="5" style={{ padding: '10px 20px', paddingLeft: '40px', fontWeight: 700, color: 'var(--text-main)', borderBottom: '1px solid #e2e8f0' }}>
+                                <td colSpan="6" style={{ padding: '10px 20px', paddingLeft: '40px', fontWeight: 700, color: 'var(--text-main)', borderBottom: '1px solid #e2e8f0' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                       Sesi {sesi.sesi} - {sesi.tipe}
@@ -281,7 +357,7 @@ const PenilaianGuru = () => {
                               {/* Siswa Rows for this Sesi */}
                               {!collapsedSessions[sesi.id_sesi] && (siswaKelas.length === 0 ? (
                                 <tr>
-                                  <td colSpan="5" style={{ textAlign: 'center', padding: '16px', paddingLeft: '60px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                                  <td colSpan="6" style={{ textAlign: 'center', padding: '16px', paddingLeft: '60px', color: 'var(--text-light)', fontStyle: 'italic' }}>
                                     Belum ada siswa terdaftar.
                                   </td>
                                 </tr>
@@ -321,6 +397,18 @@ const PenilaianGuru = () => {
                                         >
                                           Lihat Detail
                                         </button>
+                                      </td>
+                                      <td style={{ textAlign: 'center' }}>
+                                        {(!nilai || nilai.nilai_total < 71) ? (
+                                          <input 
+                                            type="checkbox" 
+                                            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                            checked={!!selectedRemidi.find(item => item.id_sesi === sesi.id_sesi && item.id_siswa === siswa.id_siswa)}
+                                            onChange={() => handleToggleRemidi(sesi.id_sesi, siswa.id_siswa)}
+                                          />
+                                        ) : (
+                                          <span style={{ color: 'var(--text-light)', fontSize: '12px' }}>-</span>
+                                        )}
                                       </td>
                                     </tr>
                                   );
@@ -521,6 +609,51 @@ const PenilaianGuru = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remidi Deadline Modal */}
+      {isRemidiModalOpen && (
+        <div className="modal-overlay" onClick={() => !isRemidiSubmitting && setIsRemidiModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3>Buat Sesi Remidi</h3>
+              <button className="modal-close" onClick={() => setIsRemidiModalOpen(false)} disabled={isRemidiSubmitting}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitRemidi}>
+              <div className="modal-body" style={{ padding: '20px' }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-medium)', margin: '0 0 16px 0' }}>
+                  Sesi Remidi akan di-generate untuk <strong>{selectedRemidi.length}</strong> siswa terpilih. Silakan tentukan tenggang waktu pengerjaannya.
+                </p>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-medium)', marginBottom: '8px' }}>
+                    Tenggang Waktu (Deadline)
+                  </label>
+                  <input 
+                    type="datetime-local" 
+                    className="form-input" 
+                    required
+                    disabled={isRemidiSubmitting}
+                    value={remidiDeadline}
+                    onChange={(e) => setRemidiDeadline(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: '#f8fafc' }}>
+                <button type="button" className="btn-secondary" onClick={() => setIsRemidiModalOpen(false)} disabled={isRemidiSubmitting}>Batal</button>
+                <button type="submit" className="btn-primary" disabled={isRemidiSubmitting}>
+                  {isRemidiSubmitting ? 'Memproses...' : 'Buat Sesi'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

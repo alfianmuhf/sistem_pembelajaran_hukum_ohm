@@ -636,7 +636,51 @@ app.post('/api/sesi/utama', authenticateToken, async (req, res) => {
   }
 });
 
+// POST Create Sesi Remidi
+app.post('/api/sesi/remidi', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'guru') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_sesi_sebelum, tenggang_waktu, siswa_ids } = req.body;
+  if (!id_sesi_sebelum || !tenggang_waktu || !siswa_ids || siswa_ids.length === 0) {
+    return res.status(400).json({ message: 'Data tidak lengkap. Pilih siswa dan tentukan tenggang waktu.' });
+  }
 
+  try {
+    const { data: originalSesi, error: osErr } = await supabase.from('sesi').select('id_kelas, sesi').eq('id_sesi', id_sesi_sebelum).single();
+    if (osErr || !originalSesi) throw new Error('Sesi asal tidak ditemukan.');
+
+    const tanggal_pembuatan = new Date().toISOString().split('T')[0];
+    const { data: newSesi, error: nsErr } = await supabase.from('sesi').insert([{
+      id_kelas: originalSesi.id_kelas,
+      id_sesi_sebelum,
+      sesi: originalSesi.sesi,
+      tipe: 'remidi',
+      tanggal_pembuatan,
+      tenggang_waktu
+    }]).select('*, kelas(nama_kelas)').single();
+    
+    if (nsErr) throw nsErr;
+
+    const fixedOhms = [220, 330, 470, 680];
+    const soalToInsert = [];
+    siswa_ids.forEach(id_siswa => {
+      fixedOhms.forEach(ohm => {
+        const volt = Math.floor(Math.random() * 9) + 3;
+        const ampere = parseFloat((volt / ohm).toFixed(4));
+        soalToInsert.push({ id_sesi: newSesi.id_sesi, id_siswa, ohm, volt, ampere });
+      });
+    });
+
+    if (soalToInsert.length > 0) {
+      const { error: soalErr } = await supabase.from('soal').insert(soalToInsert);
+      if (soalErr) throw soalErr;
+    }
+
+    res.json({ message: 'Sesi remidi berhasil dibuat beserta soalnya.', sesi: newSesi });
+  } catch (error) {
+    console.error('Error creating sesi remidi:', error);
+    res.status(500).json({ message: error.message || 'Gagal membuat sesi remidi.' });
+  }
+});
 
 // PUT Edit Sesi (Tenggang Waktu)
 app.put('/api/sesi/:id', authenticateToken, async (req, res) => {

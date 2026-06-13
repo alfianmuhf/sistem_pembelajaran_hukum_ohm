@@ -25,16 +25,16 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - List sesi otomatis melakukan *Grouping* per kelas.
   - Form dilengkapi *Dropdown* kelas dinamis (hanya menampilkan kelas yang diajar oleh guru tersebut) dan input Tanggal beserta Jam batas akhir pengerjaan.
   - **Generate Soal Susulan (Siswa Baru)**: Tombol aksi cerdas di daftar sesi yang mengecek dan men-generate otomatis soal baru *hanya* untuk siswa yang baru dimasukkan ke kelas, tanpa memengaruhi siswa yang sudah memiliki soal.
-  - *Catatan: Fitur Sesi Remidi untuk sementara ditiadakan atas permintaan spesifik.*
-- **Menu Penilaian Kuis & Praktikum**:
-  - Halaman terdedikasi untuk memberikan nilai terhadap jawaban siswa yang dikelompokkan secara terstruktur.
-  - Menampilkan daftar siswa lengkap dengan status penilaian dan rekap Total Nilai dalam satu tabel hirarkis (**Kelas -> Sesi -> Siswa**).
-  - Dilengkapi fitur **Collapsible Header** (bisa di-*expand*/*collapse*) pada nama Kelas dan Sesi, agar guru mudah menyembunyikan data yang tidak sedang diperiksa (seperti *summary*).
-  - Setiap kali guru menekan "Lihat Detail", akan muncul Modal *pop-up*. Aksi keberhasilan menyimpan nilai dilengkapi *feedback* berupa notifikasi **Toast Modern** di pojok kanan bawah.
-  - **Auto-Grading Teori**: Jawaban hitungan Ampere siswa divalidasi otomatis oleh sistem saat guru memuat detail, dengan toleransi perbedaan desimal sebesar ±0.01 Ampere. Nilai benar untuk tiap soal adalah 25 poin (Maks 100).
-  - **Manual Grading Praktikum & Analisis**: Guru mengecek pembacaan sensor IoT siswa beserta laporan/kesimpulan mereka, lalu memberikan nilai secara manual dari 0-100.
-  - Nilai tidak dapat disimpan sebelum *tenggang waktu pengerjaan (deadline)* sesi terkait ditutup oleh sistem.
-  - **Kalkulasi Total Nilai**: Total Nilai dikalkulasi secara proporsional sebagai rata-rata dari tiga komponen: `Total = (Nilai Teori + Nilai Praktikum + Nilai Analisis) / 3`. Guru dapat memperbarui (Upsert) nilai manual tanpa menduplikasi data.
+- **Halaman Penilaian (Guru)**:
+  - **Tampilan Hierarkis (Accordion)**: Daftar penilaian dikelompokkan secara rapi berdasarkan **Kelas** dan **Sesi**. Setiap Kelas dapat di-klik (di-expand/collapse) untuk melihat daftar Sesi di dalamnya, dan Sesi dapat di-klik untuk melihat daftar Siswa.
+  - **Auto-Grading & Manual Grading**: Siswa yang mengerjakan kuis akan mendapatkan `nilai_soal` secara otomatis (±0.01 toleransi jawaban Ampere). Guru dapat memberikan `nilai_praktikum` dan `nilai_analisis` secara manual via tombol "Lihat Detail". `total_nilai` kemudian dihitung otomatis dengan formula `(Teori + Praktikum + Analisis) / 3`.
+  - **Status Penilaian Otomatis**: Label "Sudah Dinilai" (hijau) hanya akan muncul ketika guru sudah memasukkan *Nilai Praktikum* atau *Nilai Analisis*. Jika belum ada intervensi manual dari guru (meskipun siswa sudah mendapat nilai kuis otomatis), statusnya akan tetap "Belum Dinilai" (merah).
+  - **Notifikasi Toast**: Setiap aksi simpan nilai akan memunculkan *Pop-up Toast Notification* modern dari pojok kanan bawah yang hilang secara otomatis.
+  - **Sistem Remidi (Checklist & Generate Ulang)**:
+    - Guru dapat memantau siswa yang mendapatkan `nilai_total` di bawah batas tuntas (`< 71`) atau belum lengkap nilainya.
+    - Terdapat fitur kotak centang (Checkbox) khusus "Pilih Remidi" untuk siswa-siswa tersebut.
+    - Setelah memilih beberapa siswa, guru dapat mengeklik tombol **"Buat Sesi Remidi"** yang akan memunculkan Modal input batas waktu pengerjaan (tenggang waktu).
+    - Sistem kemudian secara otomatis membuat Sesi Baru ber-tipe `remidi` yang terhubung ke sesi aslinya (`id_sesi_sebelum`), dan meng-generate 3 soal (Volt, Ohm, Ampere) **secara eksklusif** hanya untuk siswa yang di-checklist tersebut. Sesi remidi ini akan muncul sebagai sub-kategori baru di bawah kelas yang sama.
 
 ## 2.6. Fitur yang Sudah Diimplementasikan (Fase 3: Siswa Panel)
 - **Auto-Generate Soal Kuis (Backend)**:
