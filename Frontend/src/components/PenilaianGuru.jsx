@@ -259,7 +259,6 @@ const PenilaianGuru = () => {
                 <th>Status Penilaian</th>
                 <th style={{ textAlign: 'center' }}>Total Nilai</th>
                 <th style={{ textAlign: 'center' }}>Aksi</th>
-                <th style={{ textAlign: 'center' }}>Pilih Remidi</th>
               </tr>
             </thead>
             <tbody>
@@ -295,7 +294,7 @@ const PenilaianGuru = () => {
                         style={{ background: 'rgba(59, 130, 246, 0.05)', cursor: 'pointer' }}
                         onClick={() => setCollapsedClasses(prev => ({...prev, [kelas.id_kelas]: !prev[kelas.id_kelas]}))}
                       >
-                        <td colSpan="6" style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--primary)', borderBottom: '2px solid rgba(59, 130, 246, 0.2)' }}>
+                        <td colSpan="5" style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--primary)', borderBottom: '2px solid rgba(59, 130, 246, 0.2)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
                               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -318,7 +317,7 @@ const PenilaianGuru = () => {
 
                       {!collapsedClasses[kelas.id_kelas] && (sesiKelas.length === 0 ? (
                         <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                          <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontStyle: 'italic' }}>
                             Belum ada sesi di kelas ini.
                           </td>
                         </tr>
@@ -332,7 +331,7 @@ const PenilaianGuru = () => {
                                 style={{ background: '#f8fafc', cursor: 'pointer' }}
                                 onClick={() => setCollapsedSessions(prev => ({...prev, [sesi.id_sesi]: !prev[sesi.id_sesi]}))}
                               >
-                                <td colSpan="6" style={{ padding: '10px 20px', paddingLeft: '40px', fontWeight: 700, color: 'var(--text-main)', borderBottom: '1px solid #e2e8f0' }}>
+                                <td colSpan="5" style={{ padding: '10px 20px', paddingLeft: '40px', fontWeight: 700, color: 'var(--text-main)', borderBottom: '1px solid #e2e8f0' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                       Sesi {sesi.sesi} - {sesi.tipe}
@@ -345,6 +344,23 @@ const PenilaianGuru = () => {
                                       }}>
                                         {isPastDeadline ? 'Berakhir' : 'Berjalan'}
                                       </span>
+                                      {(() => {
+                                        if (sesi.tipe?.toLowerCase() === 'remidi') return null;
+                                        const siswaButuhRemidi = siswaKelas.filter(s => {
+                                          const n = nilaiList.find(nl => nl.id_siswa === s.id_siswa && nl.id_sesi === sesi.id_sesi);
+                                          return n && n.nilai_total !== null && n.nilai_total < 71;
+                                        });
+                                        if (siswaButuhRemidi.length === 0) return null;
+                                        return (
+                                          <button 
+                                            className="btn-primary"
+                                            onClick={(e) => { e.stopPropagation(); handleOpenRemidiBulk(sesi.id_sesi, siswaButuhRemidi); }}
+                                            style={{ marginLeft: '12px', padding: '4px 12px', fontSize: '12px', background: 'var(--accent)' }}
+                                          >
+                                            Buat Sesi Remidi ({siswaButuhRemidi.length} Siswa)
+                                          </button>
+                                        );
+                                      })()}
                                     </div>
                                     <svg 
                                       width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -367,7 +383,7 @@ const PenilaianGuru = () => {
                                 if (siswaToRender.length === 0) {
                                   return (
                                     <tr>
-                                      <td colSpan="6" style={{ textAlign: 'center', padding: '16px', paddingLeft: '60px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                                      <td colSpan="5" style={{ textAlign: 'center', padding: '16px', paddingLeft: '60px', color: 'var(--text-light)', fontStyle: 'italic' }}>
                                         {sesi.tipe?.toLowerCase() === 'remidi' ? 'Belum ada siswa yang mengikuti remidi ini.' : 'Belum ada siswa terdaftar.'}
                                       </td>
                                     </tr>
@@ -409,18 +425,6 @@ const PenilaianGuru = () => {
                                         >
                                           Lihat Detail
                                         </button>
-                                      </td>
-                                      <td style={{ textAlign: 'center' }}>
-                                        {(sesi.tipe?.toLowerCase() !== 'remidi' && nilai && nilai.nilai_total !== null && nilai.nilai_total < 71) ? (
-                                          <input 
-                                            type="checkbox" 
-                                            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                                            checked={!!selectedRemidi.find(item => item.id_sesi === sesi.id_sesi && item.id_siswa === siswa.id_siswa)}
-                                            onChange={() => handleToggleRemidi(sesi.id_sesi, siswa.id_siswa)}
-                                          />
-                                        ) : (
-                                          <span style={{ color: 'var(--text-light)', fontSize: '12px' }}>-</span>
-                                        )}
                                       </td>
                                     </tr>
                                   );

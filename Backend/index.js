@@ -755,15 +755,35 @@ app.post('/api/sesi/:id/generate-missing', authenticateToken, async (req, res) =
       return res.status(400).json({ message: 'Sesi sudah berakhir, tidak dapat meng-generate soal.' });
     }
 
-    // 2. Get All Siswa in the Class
-    const { data: allSiswa, error: siswaErr } = await supabase
-      .from('siswa')
-      .select('id_siswa')
-      .eq('id_kelas', sesi.id_kelas);
+    // 2. Determine Target Siswa
+    let targetSiswaIds = [];
+    if (sesi.tipe?.toLowerCase() === 'remidi') {
+      if (!sesi.id_sesi_sebelum) {
+        return res.status(400).json({ message: 'Sesi remidi tidak memiliki referensi sesi sebelumnya.' });
+      }
+      const { data: previousGrades, error: gradesErr } = await supabase
+        .from('nilai_siswa')
+        .select('id_siswa, nilai_total')
+        .eq('id_sesi', sesi.id_sesi_sebelum)
+        .lt('nilai_total', 71);
+      
+      if (gradesErr) throw gradesErr;
+      targetSiswaIds = previousGrades ? previousGrades.map(g => g.id_siswa) : [];
+    } else {
+      const { data: classSiswa, error: siswaErr } = await supabase
+        .from('siswa')
+        .select('id_siswa')
+        .eq('id_kelas', sesi.id_kelas);
 
-    if (siswaErr || !allSiswa || allSiswa.length === 0) {
-      return res.status(400).json({ message: 'Tidak ada siswa di kelas ini.' });
+      if (siswaErr) throw siswaErr;
+      targetSiswaIds = classSiswa ? classSiswa.map(s => s.id_siswa) : [];
     }
+
+    if (targetSiswaIds.length === 0) {
+      return res.status(400).json({ message: 'Tidak ada siswa target untuk di-generate soalnya.' });
+    }
+
+    const allSiswa = targetSiswaIds.map(id => ({ id_siswa: id }));
 
     // 3. Get Existing Soal for this Session
     const { data: existingSoal, error: soalErr } = await supabase
