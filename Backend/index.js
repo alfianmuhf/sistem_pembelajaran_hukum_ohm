@@ -997,7 +997,23 @@ app.get('/api/penilaian/rekap', authenticateToken, async (req, res) => {
         nilaiData = nData || [];
       }
     }
-    res.json({ kelas: kelasData || [], sesi: sesiData, siswa: siswaData, nilai: nilaiData });
+
+    let pesertaRemidi = [];
+    const remidiSesiIds = sesiData.filter(s => s.tipe?.toLowerCase() === 'remidi').map(s => s.id_sesi);
+    if (remidiSesiIds.length > 0) {
+      const { data: soalData } = await supabase.from('soal').select('id_sesi, id_siswa').in('id_sesi', remidiSesiIds);
+      if (soalData) {
+        const seen = new Set();
+        pesertaRemidi = soalData.filter(item => {
+          const key = `${item.id_sesi}-${item.id_siswa}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+    }
+
+    res.json({ kelas: kelasData || [], sesi: sesiData, siswa: siswaData, nilai: nilaiData, pesertaRemidi });
   } catch (error) {
     console.error('Error fetching rekap:', error);
     res.status(500).json({ message: 'Gagal mengambil rekap penilaian.' });

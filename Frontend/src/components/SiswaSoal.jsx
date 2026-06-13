@@ -366,7 +366,7 @@ const SiswaSoal = () => {
             <span style={{ background: selectedSesi.tipe === 'Utama' ? 'var(--primary)' : 'var(--warning)', color: 'white', padding: '4px 10px', borderRadius: '12px', fontSize: '14px' }}>
               {selectedSesi.tipe === 'Utama' ? 'Utama' : 'Remidi'}
             </span>
-            Tugas Sesi {selectedSesi.sesi}
+            Tugas {selectedSesi.tipe?.toLowerCase() === 'remidi' ? 'Remidi' : 'Sesi'} {selectedSesi.sesi}
           </h2>
           <p style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: 'var(--danger)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

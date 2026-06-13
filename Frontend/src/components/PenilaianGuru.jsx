@@ -29,6 +29,7 @@ const PenilaianGuru = () => {
 
   // Remidi States
   const [selectedRemidi, setSelectedRemidi] = useState([]);
+  const [pesertaRemidiData, setPesertaRemidiData] = useState([]);
   const [isRemidiModalOpen, setIsRemidiModalOpen] = useState(false);
   const [remidiDeadline, setRemidiDeadline] = useState('');
   const [isRemidiSubmitting, setIsRemidiSubmitting] = useState(false);
@@ -64,6 +65,7 @@ const PenilaianGuru = () => {
       setSesiList(data.sesi || []);
       setSiswaList(data.siswa || []);
       setNilaiList(data.nilai || []);
+      setPesertaRemidiData(data.pesertaRemidi || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -355,14 +357,24 @@ const PenilaianGuru = () => {
                               </tr>
                               
                               {/* Siswa Rows for this Sesi */}
-                              {!collapsedSessions[sesi.id_sesi] && (siswaKelas.length === 0 ? (
-                                <tr>
-                                  <td colSpan="6" style={{ textAlign: 'center', padding: '16px', paddingLeft: '60px', color: 'var(--text-light)', fontStyle: 'italic' }}>
-                                    Belum ada siswa terdaftar.
-                                  </td>
-                                </tr>
-                              ) : (
-                                siswaKelas.map(siswa => {
+                              {!collapsedSessions[sesi.id_sesi] && (() => {
+                                let siswaToRender = siswaKelas;
+                                if (sesi.tipe?.toLowerCase() === 'remidi') {
+                                  const pesertaThisSesi = pesertaRemidiData.filter(p => p.id_sesi === sesi.id_sesi).map(p => p.id_siswa);
+                                  siswaToRender = siswaKelas.filter(s => pesertaThisSesi.includes(s.id_siswa));
+                                }
+
+                                if (siswaToRender.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td colSpan="6" style={{ textAlign: 'center', padding: '16px', paddingLeft: '60px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                                        {sesi.tipe?.toLowerCase() === 'remidi' ? 'Belum ada siswa yang mengikuti remidi ini.' : 'Belum ada siswa terdaftar.'}
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+
+                                return siswaToRender.map(siswa => {
                                   const nilai = nilaiList.find(n => n.id_siswa === siswa.id_siswa && n.id_sesi === sesi.id_sesi);
                                   const isDinilai = nilai && (
                                     (nilai.nilai_praktikum !== null && nilai.nilai_praktikum !== undefined) || 
@@ -399,7 +411,7 @@ const PenilaianGuru = () => {
                                         </button>
                                       </td>
                                       <td style={{ textAlign: 'center' }}>
-                                        {(nilai && nilai.nilai_total !== null && nilai.nilai_total < 71) ? (
+                                        {(sesi.tipe?.toLowerCase() !== 'remidi' && nilai && nilai.nilai_total !== null && nilai.nilai_total < 71) ? (
                                           <input 
                                             type="checkbox" 
                                             style={{ cursor: 'pointer', width: '16px', height: '16px' }}
@@ -412,8 +424,8 @@ const PenilaianGuru = () => {
                                       </td>
                                     </tr>
                                   );
-                                })
-                              ))}
+                                });
+                              })()}
                             </React.Fragment>
                           );
                         })

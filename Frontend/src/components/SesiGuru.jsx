@@ -285,10 +285,17 @@ const SesiGuru = () => {
                       return (
                       <tr key={utama.id_sesi}>
                         <td style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                          Sesi {utama.sesi}
+                          {utama.tipe?.toLowerCase() === 'remidi' ? `Remidi Sesi ${utama.sesi}` : `Sesi ${utama.sesi}`}
                         </td>
                         <td>
-                          <span style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
+                          <span style={{ 
+                            background: utama.tipe?.toLowerCase() === 'remidi' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)', 
+                            color: utama.tipe?.toLowerCase() === 'remidi' ? 'var(--danger)' : 'var(--primary)', 
+                            padding: '4px 10px', 
+                            borderRadius: '12px', 
+                            fontSize: '12px', 
+                            fontWeight: 600 
+                          }}>
                             {utama.tipe}
                           </span>
                         </td>
