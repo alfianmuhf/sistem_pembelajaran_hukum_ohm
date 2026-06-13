@@ -5,90 +5,63 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukum
 const PenilaianGuru = () => {
   const [kelasList, setKelasList] = useState([]);
   const [sesiList, setSesiList] = useState([]);
-  const [selectedKelas, setSelectedKelas] = useState('');
-  const [selectedSesi, setSelectedSesi] = useState('');
-  
   const [siswaList, setSiswaList] = useState([]);
-  const [isDeadlinePassed, setIsDeadlinePassed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [nilaiList, setNilaiList] = useState([]);
+  
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailData, setDetailData] = useState(null);
+  
+  const [selectedSesi, setSelectedSesi] = useState(null);
   const [selectedSiswa, setSelectedSiswa] = useState(null);
   
   const [nilaiPraktikum, setNilaiPraktikum] = useState('');
   const [nilaiAnalisis, setNilaiAnalisis] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch classes and sessions on mount
+  // Helper function: Check if session deadline has passed
+  const isExpired = (tenggang_waktu) => {
+    if (!tenggang_waktu) return true;
+    const d = new Date();
+    const offset = 7 * 60 * 60 * 1000;
+    const localDate = new Date(d.getTime() + offset);
+    const now = localDate.toISOString().replace('Z', '');
+    return tenggang_waktu < now;
+  };
+
+  const fetchRekap = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const token = sessionStorage.getItem('ohm_session_token');
+      const res = await fetch(`${API_URL}/penilaian/rekap`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal mengambil rekap nilai');
+      
+      setKelasList(data.kelas || []);
+      setSesiList(data.sesi || []);
+      setSiswaList(data.siswa || []);
+      setNilaiList(data.nilai || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const token = sessionStorage.getItem('ohm_session_token');
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        const [kelasRes, sesiRes] = await Promise.all([
-          fetch(`${API_URL}/kelas`, { headers }),
-          fetch(`${API_URL}/sesi`, { headers })
-        ]);
-
-        if (kelasRes.ok && sesiRes.ok) {
-          const allKelasData = await kelasRes.json();
-          const allSesiData = await sesiRes.json();
-          
-          const userData = JSON.parse(atob(token.split('.')[1]));
-          const myClasses = allKelasData.filter(k => k.id_guru === userData.id);
-          setKelasList(myClasses);
-          
-          // Filter sessions that belong to my classes
-          const myClassIds = myClasses.map(c => c.id_kelas);
-          const mySessions = allSesiData.filter(s => myClassIds.includes(s.id_kelas));
-          setSesiList(mySessions);
-        }
-      } catch (err) {
-        console.error('Error fetching initial data:', err);
-      }
-    };
-    fetchInitialData();
+    fetchRekap();
   }, []);
 
-  // Fetch students when a session is selected
-  useEffect(() => {
-    if (!selectedSesi) {
-      setSiswaList([]);
-      setIsDeadlinePassed(false);
-      return;
-    }
-
-    const fetchSiswa = async () => {
-      setIsLoading(true);
-      setError('');
-      try {
-        const token = sessionStorage.getItem('ohm_session_token');
-        const res = await fetch(`${API_URL}/penilaian/sesi/${selectedSesi}/siswa`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Gagal mengambil data siswa');
-        
-        setSiswaList(data.siswa);
-        setIsDeadlinePassed(data.isDeadlinePassed);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSiswa();
-  }, [selectedSesi]);
-
   // Handle View Detail
-  const handleViewDetail = async (siswa) => {
+  const handleViewDetail = async (siswa, sesi) => {
     setSelectedSiswa(siswa);
+    setSelectedSesi(sesi);
     setIsDetailOpen(true);
     setDetailLoading(true);
     setDetailData(null);
@@ -97,7 +70,7 @@ const PenilaianGuru = () => {
 
     try {
       const token = sessionStorage.getItem('ohm_session_token');
-      const res = await fetch(`${API_URL}/penilaian/detail/${selectedSesi}/${siswa.id_siswa}`, {
+      const res = await fetch(`${API_URL}/penilaian/detail/${sesi.id_sesi}/${siswa.id_siswa}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -132,7 +105,7 @@ const PenilaianGuru = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          id_sesi: selectedSesi,
+          id_sesi: selectedSesi.id_sesi,
           id_siswa: selectedSiswa.id_siswa,
           nilai_praktikum: nilaiPraktikum,
           nilai_analisis: nilaiAnalisis
@@ -142,13 +115,17 @@ const PenilaianGuru = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Gagal menyimpan nilai');
       
-      // Update local list
-      setSiswaList(prev => prev.map(s => {
-        if (s.id_siswa === selectedSiswa.id_siswa) {
-          return { ...s, total_nilai: data.total_nilai, status: 'Sudah Dinilai' };
+      // Update local nilai list
+      setNilaiList(prev => {
+        const existingIndex = prev.findIndex(n => n.id_siswa === selectedSiswa.id_siswa && n.id_sesi === selectedSesi.id_sesi);
+        if (existingIndex >= 0) {
+          const newList = [...prev];
+          newList[existingIndex] = { ...newList[existingIndex], total_nilai: data.total_nilai };
+          return newList;
+        } else {
+          return [...prev, { id_siswa: selectedSiswa.id_siswa, id_sesi: selectedSesi.id_sesi, total_nilai: data.total_nilai }];
         }
-        return s;
-      }));
+      });
 
       setIsDetailOpen(false);
       alert('Nilai berhasil disimpan!');
@@ -159,178 +136,178 @@ const PenilaianGuru = () => {
     }
   };
 
-  // Filter sessions dropdown based on selected class
-  const availableSesi = sesiList.filter(s => s.id_kelas === parseInt(selectedKelas));
+  const isDeadlinePassedForDetail = selectedSesi ? isExpired(selectedSesi.tenggang_waktu) : false;
 
   return (
     <>
-      <div className="page-header">
-        <h2>Penilaian Hasil Praktikum & Kuis</h2>
-        <p>Periksa dan beri nilai hasil pengerjaan siswa secara manual untuk laporan praktikum dan analisis.</p>
-      </div>
-
-      {/* Filter Section */}
-      <div style={{
-        background: '#fff',
-        borderRadius: 'var(--radius-lg)',
-        padding: '24px',
-        boxShadow: 'var(--shadow-sm)',
-        marginBottom: '24px',
-        border: '1px solid var(--border)',
-        display: 'flex',
-        gap: '20px',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ flex: '1', minWidth: '200px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
-            Pilih Kelas
-          </label>
-          <select 
-            className="form-input" 
-            value={selectedKelas} 
-            onChange={e => {
-              setSelectedKelas(e.target.value);
-              setSelectedSesi('');
-            }}
-          >
-            <option value="">-- Pilih Kelas --</option>
-            {kelasList.map(k => (
-              <option key={k.id_kelas} value={k.id_kelas}>{k.nama_kelas}</option>
-            ))}
-          </select>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h2>Penilaian Hasil Praktikum & Kuis</h2>
+          <p>Daftar seluruh siswa berdasarkan kelas dan sesi. Klik "Lihat Detail" untuk memeriksa dan menginput nilai manual.</p>
         </div>
-
-        <div style={{ flex: '1', minWidth: '200px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
-            Pilih Sesi
-          </label>
-          <select 
-            className="form-input" 
-            value={selectedSesi} 
-            onChange={e => setSelectedSesi(e.target.value)}
-            disabled={!selectedKelas}
-          >
-            <option value="">-- Pilih Sesi --</option>
-            {availableSesi.map(s => (
-              <option key={s.id_sesi} value={s.id_sesi}>Sesi {s.sesi} - {s.tipe}</option>
-            ))}
-          </select>
+        <div>
+          <button className="btn-secondary" onClick={fetchRekap} disabled={isLoading} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh Data
+          </button>
         </div>
       </div>
 
-      {/* Status Info */}
-      {selectedSesi && !isLoading && (
-        <div style={{ 
-          marginBottom: '20px', 
-          padding: '16px', 
-          borderRadius: 'var(--radius-md)', 
-          background: isDeadlinePassed ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-          border: `1px solid ${isDeadlinePassed ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px'
-        }}>
-          {isDeadlinePassed ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2" style={{ flexShrink: 0 }}>
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2" style={{ flexShrink: 0 }}>
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          )}
-          <div>
-            <h4 style={{ margin: '0 0 4px 0', color: isDeadlinePassed ? 'var(--success)' : 'var(--warning-dark)', fontSize: '15px' }}>
-              {isDeadlinePassed ? 'Sesi Telah Berakhir' : 'Sesi Masih Berjalan'}
-            </h4>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-medium)' }}>
-              {isDeadlinePassed 
-                ? 'Tenggang waktu sesi ini sudah berakhir. Anda dapat memberikan dan menyimpan nilai untuk seluruh siswa.' 
-                : 'Tenggang waktu pengerjaan sesi ini belum berakhir. Nilai tidak dapat disimpan hingga sesi ditutup.'}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Table Section */}
-      {selectedSesi && (
-        <div className="data-card">
-          <div className="table-responsive">
-            <table className="custom-table">
-              <thead>
+      {/* Grouped Table Section */}
+      <div className="data-card">
+        <div className="table-responsive">
+          <table className="custom-table">
+            <thead>
+              <tr>
+                <th>NIM</th>
+                <th>Nama Siswa</th>
+                <th>Status Penilaian</th>
+                <th style={{ textAlign: 'center' }}>Total Nilai</th>
+                <th style={{ textAlign: 'center' }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
                 <tr>
-                  <th>NIM</th>
-                  <th>Nama Siswa</th>
-                  <th>Status Penilaian</th>
-                  <th style={{ textAlign: 'center' }}>Total Nilai</th>
-                  <th style={{ textAlign: 'center' }}>Aksi</th>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
+                    Memuat data...
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-light)' }}>
-                      Memuat daftar siswa...
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--danger)' }}>
-                      {error}
-                    </td>
-                  </tr>
-                ) : siswaList.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-light)' }}>
-                      Belum ada siswa di kelas ini.
-                    </td>
-                  </tr>
-                ) : (
-                  siswaList.map(siswa => (
-                    <tr key={siswa.id_siswa}>
-                      <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{siswa.nim}</td>
-                      <td>{siswa.nama_siswa}</td>
-                      <td>
-                        <span style={{ 
-                          background: siswa.status === 'Sudah Dinilai' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-                          color: siswa.status === 'Sudah Dinilai' ? 'var(--success)' : 'var(--danger)', 
-                          padding: '4px 10px', 
-                          borderRadius: '12px', 
-                          fontSize: '12px', 
-                          fontWeight: 600 
-                        }}>
-                          {siswa.status}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'center', fontWeight: 800, color: siswa.total_nilai !== null ? 'var(--primary)' : 'var(--text-light)' }}>
-                        {siswa.total_nilai !== null ? siswa.total_nilai : '-'}
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <button 
-                          className="btn-primary" 
-                          style={{ padding: '6px 14px', fontSize: '13px' }}
-                          onClick={() => handleViewDetail(siswa)}
-                        >
-                          Lihat Detail
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+              ) : error ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--danger)' }}>
+                    {error}
+                  </td>
+                </tr>
+              ) : kelasList.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
+                    Anda belum mengajar kelas manapun.
+                  </td>
+                </tr>
+              ) : (
+                kelasList.map(kelas => {
+                  const sesiKelas = sesiList.filter(s => s.id_kelas === kelas.id_kelas);
+                  const siswaKelas = siswaList.filter(s => s.id_kelas === kelas.id_kelas);
+                  
+                  if (siswaKelas.length === 0 && sesiKelas.length === 0) return null;
+
+                  return (
+                    <React.Fragment key={kelas.id_kelas}>
+                      {/* Kelas Header */}
+                      <tr style={{ background: 'rgba(59, 130, 246, 0.05)' }}>
+                        <td colSpan="5" style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--primary)', borderBottom: '2px solid rgba(59, 130, 246, 0.2)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                              <circle cx="9" cy="7" r="4" />
+                              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg>
+                            Kelas: {kelas.nama_kelas}
+                          </div>
+                        </td>
+                      </tr>
+
+                      {sesiKelas.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                            Belum ada sesi di kelas ini.
+                          </td>
+                        </tr>
+                      ) : (
+                        sesiKelas.map(sesi => {
+                          const isPastDeadline = isExpired(sesi.tenggang_waktu);
+                          return (
+                            <React.Fragment key={sesi.id_sesi}>
+                              {/* Sesi Sub-Header */}
+                              <tr style={{ background: '#f8fafc' }}>
+                                <td colSpan="5" style={{ padding: '10px 20px', paddingLeft: '40px', fontWeight: 700, color: 'var(--text-main)', borderBottom: '1px solid #e2e8f0' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    Sesi {sesi.sesi} - {sesi.tipe}
+                                    <span style={{ 
+                                      fontSize: '11px', 
+                                      padding: '2px 8px', 
+                                      borderRadius: '10px', 
+                                      background: isPastDeadline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                      color: isPastDeadline ? 'var(--success)' : 'var(--warning-dark)'
+                                    }}>
+                                      {isPastDeadline ? 'Berakhir' : 'Berjalan'}
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
+                              
+                              {/* Siswa Rows for this Sesi */}
+                              {siswaKelas.length === 0 ? (
+                                <tr>
+                                  <td colSpan="5" style={{ textAlign: 'center', padding: '16px', paddingLeft: '60px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                                    Belum ada siswa terdaftar.
+                                  </td>
+                                </tr>
+                              ) : (
+                                siswaKelas.map(siswa => {
+                                  const nilai = nilaiList.find(n => n.id_siswa === siswa.id_siswa && n.id_sesi === sesi.id_sesi);
+                                  const statusStr = nilai ? 'Sudah Dinilai' : 'Belum Dinilai';
+                                  
+                                  return (
+                                    <tr key={`${sesi.id_sesi}-${siswa.id_siswa}`}>
+                                      <td style={{ paddingLeft: '40px', fontWeight: 600, color: 'var(--text-medium)' }}>{siswa.nim}</td>
+                                      <td>{siswa.nama_siswa}</td>
+                                      <td>
+                                        <span style={{ 
+                                          background: nilai ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+                                          color: nilai ? 'var(--success)' : 'var(--danger)', 
+                                          padding: '4px 10px', 
+                                          borderRadius: '12px', 
+                                          fontSize: '12px', 
+                                          fontWeight: 600 
+                                        }}>
+                                          {statusStr}
+                                        </span>
+                                      </td>
+                                      <td style={{ textAlign: 'center', fontWeight: 800, color: nilai ? 'var(--primary)' : 'var(--text-light)' }}>
+                                        {nilai ? nilai.total_nilai : '-'}
+                                      </td>
+                                      <td style={{ textAlign: 'center' }}>
+                                        <button 
+                                          className="btn-primary" 
+                                          style={{ padding: '6px 14px', fontSize: '13px' }}
+                                          onClick={() => handleViewDetail(siswa, sesi)}
+                                        >
+                                          Lihat Detail
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </React.Fragment>
+                          );
+                        })
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
       {/* Detail Modal */}
-      {isDetailOpen && (
+      {isDetailOpen && selectedSiswa && selectedSesi && (
         <div className="modal-overlay" onClick={() => !isSaving && setIsDetailOpen(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="modal-header" style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
-              <h3>Detail Penilaian - {selectedSiswa?.nama_siswa}</h3>
+              <div>
+                <h3 style={{ margin: 0 }}>Detail Penilaian - {selectedSiswa.nama_siswa}</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-medium)' }}>Sesi {selectedSesi.sesi} ({selectedSesi.tipe})</p>
+              </div>
               <button className="modal-close" onClick={() => setIsDetailOpen(false)} disabled={isSaving}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -351,6 +328,28 @@ const PenilaianGuru = () => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   
+                  {/* Status Info in Modal */}
+                  <div style={{ 
+                    padding: '12px 16px', 
+                    borderRadius: 'var(--radius-md)', 
+                    background: isDeadlinePassedForDetail ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                    border: `1px solid ${isDeadlinePassedForDetail ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}>
+                    {isDeadlinePassedForDetail ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    )}
+                    <span style={{ fontSize: '13px', color: isDeadlinePassedForDetail ? 'var(--success)' : 'var(--warning-dark)' }}>
+                      {isDeadlinePassedForDetail 
+                        ? 'Sesi ini telah berakhir. Anda dapat menyimpan nilai.' 
+                        : 'Sesi masih berjalan. Nilai tidak dapat disimpan sebelum tenggang waktu berakhir.'}
+                    </span>
+                  </div>
+
                   {/* Bagian Teori & Praktikum (Grid) */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                     
@@ -446,7 +445,7 @@ const PenilaianGuru = () => {
                           min="0" 
                           max="100" 
                           required
-                          disabled={!isDeadlinePassed || isSaving}
+                          disabled={!isDeadlinePassedForDetail || isSaving}
                           value={nilaiPraktikum}
                           onChange={(e) => setNilaiPraktikum(e.target.value)}
                         />
@@ -459,14 +458,14 @@ const PenilaianGuru = () => {
                           min="0" 
                           max="100" 
                           required
-                          disabled={!isDeadlinePassed || isSaving}
+                          disabled={!isDeadlinePassedForDetail || isSaving}
                           value={nilaiAnalisis}
                           onChange={(e) => setNilaiAnalisis(e.target.value)}
                         />
                       </div>
                     </div>
 
-                    {!isDeadlinePassed && (
+                    {!isDeadlinePassedForDetail && (
                       <p style={{ fontSize: '13px', color: 'var(--danger)', margin: '0 0 16px 0' }}>
                         * Anda tidak dapat menyimpan nilai sebelum batas waktu sesi berakhir.
                       </p>
@@ -474,7 +473,7 @@ const PenilaianGuru = () => {
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                       <button type="button" className="btn-secondary" onClick={() => setIsDetailOpen(false)} disabled={isSaving}>Batal</button>
-                      <button type="submit" className="btn-primary" disabled={!isDeadlinePassed || isSaving}>
+                      <button type="submit" className="btn-primary" disabled={!isDeadlinePassedForDetail || isSaving}>
                         {isSaving ? 'Menyimpan...' : 'Simpan Nilai'}
                       </button>
                     </div>

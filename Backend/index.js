@@ -929,6 +929,38 @@ app.post('/api/jawaban/analisis', authenticateToken, async (req, res) => {
 
 // --- PENILAIAN GURU ---
 
+// GET Rekap Seluruh Siswa & Nilai untuk Guru
+app.get('/api/penilaian/rekap', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'guru') return res.status(403).json({ message: 'Akses ditolak.' });
+  try {
+    const { data: kelasData } = await supabase.from('kelas').select('id_kelas, nama_kelas').eq('id_guru', req.user.id);
+    const kelasIds = kelasData ? kelasData.map(k => k.id_kelas) : [];
+    
+    let sesiData = [];
+    let siswaData = [];
+    let nilaiData = [];
+
+    if (kelasIds.length > 0) {
+      const { data: sData } = await supabase.from('sesi').select('*').in('id_kelas', kelasIds).order('sesi', { ascending: true });
+      sesiData = sData || [];
+      const sesiIds = sesiData.map(s => s.id_sesi);
+
+      const { data: swData } = await supabase.from('siswa').select('id_siswa, id_kelas, nim, nama_siswa').in('id_kelas', kelasIds).order('nama_siswa', { ascending: true });
+      siswaData = swData || [];
+
+      if (sesiIds.length > 0) {
+        const { data: nData } = await supabase.from('nilai_siswa').select('*').in('id_sesi', sesiIds);
+        nilaiData = nData || [];
+      }
+    }
+    res.json({ kelas: kelasData || [], sesi: sesiData, siswa: siswaData, nilai: nilaiData });
+  } catch (error) {
+    console.error('Error fetching rekap:', error);
+    res.status(500).json({ message: 'Gagal mengambil rekap penilaian.' });
+  }
+});
+
+
 // GET Daftar Siswa per Sesi untuk Penilaian
 app.get('/api/penilaian/sesi/:id_sesi/siswa', authenticateToken, async (req, res) => {
   if (req.user.role !== 'guru') return res.status(403).json({ message: 'Akses ditolak.' });
