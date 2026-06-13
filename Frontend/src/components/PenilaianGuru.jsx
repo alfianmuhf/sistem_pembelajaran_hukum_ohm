@@ -386,7 +386,7 @@ const PenilaianGuru = () => {
                                           {statusStr}
                                         </span>
                                       </td>
-                                      <td style={{ textAlign: 'center', fontWeight: 800, color: nilai ? 'var(--primary)' : 'var(--text-light)' }}>
+                                      <td style={{ textAlign: 'center', fontWeight: 800, color: nilai && nilai.nilai_total !== null ? (nilai.nilai_total >= 71 ? 'var(--primary)' : 'var(--danger)') : 'var(--text-light)' }}>
                                         {nilai ? nilai.nilai_total : '-'}
                                       </td>
                                       <td style={{ textAlign: 'center' }}>
@@ -399,7 +399,7 @@ const PenilaianGuru = () => {
                                         </button>
                                       </td>
                                       <td style={{ textAlign: 'center' }}>
-                                        {(!nilai || nilai.nilai_total < 71) ? (
+                                        {(nilai && nilai.nilai_total !== null && nilai.nilai_total < 71) ? (
                                           <input 
                                             type="checkbox" 
                                             style={{ cursor: 'pointer', width: '16px', height: '16px' }}

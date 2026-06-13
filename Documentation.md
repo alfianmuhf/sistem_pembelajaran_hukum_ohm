@@ -31,8 +31,8 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - **Status Penilaian Otomatis**: Label "Sudah Dinilai" (hijau) hanya akan muncul ketika guru sudah memasukkan *Nilai Praktikum* atau *Nilai Analisis*. Jika belum ada intervensi manual dari guru (meskipun siswa sudah mendapat nilai kuis otomatis), statusnya akan tetap "Belum Dinilai" (merah).
   - **Notifikasi Toast**: Setiap aksi simpan nilai akan memunculkan *Pop-up Toast Notification* modern dari pojok kanan bawah yang hilang secara otomatis.
   - **Sistem Remidi (Checklist & Generate Ulang)**:
-    - Guru dapat memantau siswa yang mendapatkan `nilai_total` di bawah batas tuntas (`< 71`) atau belum lengkap nilainya.
-    - Terdapat fitur kotak centang (Checkbox) khusus "Pilih Remidi" untuk siswa-siswa tersebut.
+    - **Visualisasi Total Nilai**: Tampilan `nilai_total` diwarnai **biru** (primary) jika sudah tuntas (>= 71) dan **merah** (danger) jika masih di bawah batas tuntas (< 71).
+    - Guru dapat memantau siswa yang belum tuntas, dan terdapat fitur kotak centang (Checkbox) khusus "Pilih Remidi". Checkbox ini **hanya** akan muncul apabila status penilaian sudah diproses (total nilai sudah muncul) dan nilai tersebut `< 71`.
     - Setelah memilih beberapa siswa, guru dapat mengeklik tombol **"Buat Sesi Remidi"** yang akan memunculkan Modal input batas waktu pengerjaan (tenggang waktu).
     - Sistem kemudian secara otomatis membuat Sesi Baru ber-tipe `remidi` yang terhubung ke sesi aslinya (`id_sesi_sebelum`), dan meng-generate 3 soal (Volt, Ohm, Ampere) **secara eksklusif** hanya untuk siswa yang di-checklist tersebut. Sesi remidi ini akan muncul sebagai sub-kategori baru di bawah kelas yang sama.
 
