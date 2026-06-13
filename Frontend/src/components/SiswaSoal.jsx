@@ -538,8 +538,8 @@ const SiswaSoal = () => {
                         <button 
                           className="btn-primary" 
                           onClick={() => handleSavePraktikum(item.id_soal)}
-                          disabled={isSavingPraktikum[item.id_soal] || !isIotConnected}
-                          style={{ padding: '8px 16px', fontSize: '13px', opacity: (!isIotConnected) ? 0.5 : 1, cursor: (!isIotConnected) ? 'not-allowed' : 'pointer' }}
+                          disabled={isSavingPraktikum[item.id_soal] || !isIotConnected || !simulating}
+                          style={{ padding: '8px 16px', fontSize: '13px', opacity: (!isIotConnected || !simulating) ? 0.5 : 1, cursor: (!isIotConnected || !simulating) ? 'not-allowed' : 'pointer' }}
                         >
                           {isSavingPraktikum[item.id_soal] ? 'Loading...' : 'Simpan Jawaban'}
                         </button>
