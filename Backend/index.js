@@ -613,7 +613,7 @@ app.post('/api/sesi/utama', authenticateToken, async (req, res) => {
       siswaData.forEach(siswa => {
         fixedOhms.forEach(ohm => {
           const volt = Math.floor(Math.random() * 9) + 3; // Random 3 to 11
-          const ampere = parseFloat((volt / ohm).toFixed(4));
+          const ampere = parseFloat(((volt / ohm) * 1000).toFixed(2));
           soalToInsert.push({
             id_sesi: data.id_sesi,
             id_siswa: siswa.id_siswa,
@@ -665,7 +665,7 @@ app.post('/api/sesi/remidi', authenticateToken, async (req, res) => {
     siswa_ids.forEach(id_siswa => {
       fixedOhms.forEach(ohm => {
         const volt = Math.floor(Math.random() * 9) + 3;
-        const ampere = parseFloat((volt / ohm).toFixed(4));
+        const ampere = parseFloat(((volt / ohm) * 1000).toFixed(2));
         soalToInsert.push({ id_sesi: newSesi.id_sesi, id_siswa, ohm, volt, ampere });
       });
     });
@@ -789,7 +789,7 @@ app.post('/api/sesi/:id/generate-missing', authenticateToken, async (req, res) =
     missingSiswa.forEach(siswa => {
       fixedOhms.forEach(ohm => {
         const volt = Math.floor(Math.random() * 9) + 3; // Random 3 to 11
-        const ampere = parseFloat((volt / ohm).toFixed(4));
+        const ampere = parseFloat(((volt / ohm) * 1000).toFixed(2));
         soalToInsert.push({
           id_sesi: id,
           id_siswa: siswa.id_siswa,
