@@ -494,9 +494,9 @@ const PenilaianGuru = () => {
                           return (
                             <div key={soal.id_soal} style={{ fontSize: '13px', background: '#fff', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div>
-                                <div><strong>Soal {idx + 1}:</strong> {soal.volt}V / {soal.ohm}Ω = {soal.ampere}A</div>
+                                <div><strong>Soal {idx + 1}:</strong> {soal.volt}V / {soal.ohm}Ω = {soal.ampere} mA</div>
                                 <div style={{ color: 'var(--text-medium)', marginTop: '4px' }}>
-                                  Jawaban Siswa: <strong>{jwb !== undefined && jwb !== null ? `${jwb} A` : 'Belum Dijawab'}</strong>
+                                  Jawaban Siswa: <strong>{jwb !== undefined && jwb !== null ? `${jwb} mA` : 'Belum Dijawab'}</strong>
                                 </div>
                               </div>
                               {isCorrect ? (
@@ -523,13 +523,13 @@ const PenilaianGuru = () => {
                           const prak = detailData.praktikum.find(p => p.id_soal === soal.id_soal);
                           return (
                             <div key={soal.id_soal} style={{ fontSize: '13px', background: '#fff', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid #e2e8f0' }}>
-                              <div style={{ marginBottom: '6px' }}><strong>Target Soal {idx + 1}:</strong> {soal.volt}V, {soal.ohm}Ω, {soal.ampere}A</div>
+                              <div style={{ marginBottom: '6px' }}><strong>Target Soal {idx + 1}:</strong> {soal.volt}V, {soal.ohm}Ω, {soal.ampere} mA</div>
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', color: 'var(--text-medium)' }}>
                                 <div style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>
                                   V: {prak?.volt ?? '-'}
                                 </div>
                                 <div style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>
-                                  A: {prak?.ampere ?? '-'}
+                                  mA: {prak?.ampere ?? '-'}
                                 </div>
                               </div>
                             </div>
