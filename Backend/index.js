@@ -927,6 +927,159 @@ app.post('/api/jawaban/analisis', authenticateToken, async (req, res) => {
   }
 });
 
+// --- PENILAIAN GURU ---
+
+// GET Daftar Siswa per Sesi untuk Penilaian
+app.get('/api/penilaian/sesi/:id_sesi/siswa', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'guru') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_sesi } = req.params;
+
+  try {
+    // Check if session exists and belongs to a class taught by the teacher
+    const { data: sesi, error: sesiErr } = await supabase
+      .from('sesi')
+      .select('id_kelas, kelas!inner(id_guru), tenggang_waktu')
+      .eq('id_sesi', id_sesi)
+      .single();
+      
+    if (sesiErr || !sesi) return res.status(404).json({ message: 'Sesi tidak ditemukan.' });
+    if (sesi.kelas.id_guru !== req.user.id) return res.status(403).json({ message: 'Bukan kelas Anda.' });
+
+    // Fetch students in this class
+    const { data: siswaData, error: siswaErr } = await supabase
+      .from('siswa')
+      .select('id_siswa, nim, nama_siswa')
+      .eq('id_kelas', sesi.id_kelas)
+      .order('nama_siswa', { ascending: true });
+
+    if (siswaErr) throw siswaErr;
+
+    // Fetch grades for these students in this session
+    const { data: nilaiData, error: nilaiErr } = await supabase
+      .from('nilai_siswa')
+      .select('id_siswa, total_nilai')
+      .eq('id_sesi', id_sesi);
+
+    if (nilaiErr) throw nilaiErr;
+
+    const nilaiMap = {};
+    if (nilaiData) {
+      nilaiData.forEach(n => {
+        nilaiMap[n.id_siswa] = n.total_nilai;
+      });
+    }
+
+    const result = siswaData.map(s => ({
+      ...s,
+      total_nilai: nilaiMap[s.id_siswa] !== undefined ? nilaiMap[s.id_siswa] : null,
+      status: nilaiMap[s.id_siswa] !== undefined ? 'Sudah Dinilai' : 'Belum Dinilai'
+    }));
+
+    // Check if deadline has passed (required to grade)
+    const d = new Date();
+    const offset = 7 * 60 * 60 * 1000;
+    const localDate = new Date(d.getTime() + offset);
+    const now = localDate.toISOString().replace('Z', '');
+    const isDeadlinePassed = sesi.tenggang_waktu < now;
+
+    res.json({ siswa: result, isDeadlinePassed });
+  } catch (error) {
+    console.error('Error fetching siswa penilaian:', error);
+    res.status(500).json({ message: 'Gagal mengambil data siswa.' });
+  }
+});
+
+// GET Detail Jawaban Siswa
+app.get('/api/penilaian/detail/:id_sesi/:id_siswa', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'guru') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_sesi, id_siswa } = req.params;
+
+  try {
+    // Get Soal
+    const { data: soalData } = await supabase.from('soal').select('*').eq('id_sesi', id_sesi).eq('id_siswa', id_siswa).order('id_soal', { ascending: true });
+    const soalIds = soalData ? soalData.map(s => s.id_soal) : [];
+
+    let teori = [];
+    let praktikum = [];
+    
+    if (soalIds.length > 0) {
+      const { data: tData } = await supabase.from('jawaban_soal_siswa').select('*').in('id_soal', soalIds);
+      teori = tData || [];
+      const { data: pData } = await supabase.from('jawaban_praktikum_siswa').select('*').in('id_soal', soalIds);
+      praktikum = pData || [];
+    }
+
+    const { data: analisis } = await supabase.from('jawaban_analisis_siswa').select('*').eq('id_sesi', id_sesi).eq('id_siswa', id_siswa).maybeSingle();
+    const { data: nilai } = await supabase.from('nilai_siswa').select('*').eq('id_sesi', id_sesi).eq('id_siswa', id_siswa).maybeSingle();
+
+    res.json({ soal: soalData, teori, praktikum, analisis, nilai });
+  } catch (error) {
+    console.error('Error fetching detail jawaban:', error);
+    res.status(500).json({ message: 'Gagal mengambil detail jawaban.' });
+  }
+});
+
+// POST Simpan Nilai
+app.post('/api/penilaian/simpan', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'guru') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_sesi, id_siswa, nilai_praktikum, nilai_analisis } = req.body;
+
+  try {
+    // Calculate Teori Score
+    const { data: soalData } = await supabase.from('soal').select('*').eq('id_sesi', id_sesi).eq('id_siswa', id_siswa);
+    const soalIds = soalData ? soalData.map(s => s.id_soal) : [];
+    
+    let nilai_soal = 0;
+    if (soalIds.length > 0) {
+      const { data: tData } = await supabase.from('jawaban_soal_siswa').select('*').in('id_soal', soalIds);
+      if (tData) {
+        soalData.forEach(soal => {
+          const jawaban = tData.find(t => t.id_soal === soal.id_soal);
+          if (jawaban && jawaban.jawaban_soal !== null) {
+            // Check tolerance 0.01
+            if (Math.abs(jawaban.jawaban_soal - soal.ampere) <= 0.01) {
+              nilai_soal += 25; // Since 4 questions, 25 each
+            }
+          }
+        });
+      }
+    }
+
+    // Ensure they don't exceed 100
+    nilai_soal = Math.min(100, Math.max(0, nilai_soal));
+    const p = Math.min(100, Math.max(0, parseFloat(nilai_praktikum) || 0));
+    const a = Math.min(100, Math.max(0, parseFloat(nilai_analisis) || 0));
+
+    // Total formula (average)
+    const total_nilai = Math.round((nilai_soal + p + a) / 3);
+
+    const { data: existing } = await supabase.from('nilai_siswa').select('id_nilai_siswa').eq('id_sesi', id_sesi).eq('id_siswa', id_siswa).maybeSingle();
+    
+    if (existing) {
+      await supabase.from('nilai_siswa').update({ 
+        nilai_soal, 
+        nilai_praktikum: p, 
+        nilai_analisis: a, 
+        total_nilai 
+      }).eq('id_nilai_siswa', existing.id_nilai_siswa);
+    } else {
+      await supabase.from('nilai_siswa').insert([{ 
+        id_sesi, 
+        id_siswa, 
+        nilai_soal, 
+        nilai_praktikum: p, 
+        nilai_analisis: a, 
+        total_nilai 
+      }]);
+    }
+
+    res.json({ message: 'Nilai berhasil disimpan.', total_nilai });
+  } catch (error) {
+    console.error('Error saving nilai:', error);
+    res.status(500).json({ message: 'Gagal menyimpan nilai.' });
+  }
+});
+
 // Root check endpoint
 app.get('/', (req, res) => {
   res.send('Backend API Smart Learning OHM is running.');

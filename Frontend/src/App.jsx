@@ -5,6 +5,7 @@ import KelasAdmin from './components/KelasAdmin'
 import SiswaAdmin from './components/SiswaAdmin'
 import SesiGuru from './components/SesiGuru'
 import SiswaSoal from './components/SiswaSoal'
+import PenilaianGuru from './components/PenilaianGuru'
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 function App() {
@@ -287,24 +288,7 @@ function App() {
         )
 
       case 'penilaian':
-        return (
-          <>
-            <div className="page-header">
-              <h2>Penilaian Hasil Praktikum & Kuis</h2>
-              <p>Periksa hasil ketepatan data sensor IoT siswa, hitung kesesuaian nilai kuis teori, dan berikan nilai pada laporan analisis.</p>
-            </div>
-            <div className="placeholder-card">
-              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
-              <h3>Halaman Penilaian (Guru)</h3>
-              <p>Modul pemeriksaan dan penilaian hasil kuis & analisis siswa akan ditambahkan pada tahap pengerjaan backend.</p>
-            </div>
-          </>
-        )
+        return <PenilaianGuru />;
 
       case 'sesi_soal':
         return <SesiGuru />;

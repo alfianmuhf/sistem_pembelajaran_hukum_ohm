@@ -26,6 +26,13 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - Form dilengkapi *Dropdown* kelas dinamis (hanya menampilkan kelas yang diajar oleh guru tersebut) dan input Tanggal beserta Jam batas akhir pengerjaan.
   - **Generate Soal Susulan (Siswa Baru)**: Tombol aksi cerdas di daftar sesi yang mengecek dan men-generate otomatis soal baru *hanya* untuk siswa yang baru dimasukkan ke kelas, tanpa memengaruhi siswa yang sudah memiliki soal.
   - *Catatan: Fitur Sesi Remidi untuk sementara ditiadakan atas permintaan spesifik.*
+- **Menu Penilaian Kuis & Praktikum**:
+  - Halaman terdedikasi untuk memberikan nilai terhadap jawaban siswa yang dikelompokkan secara spesifik (Filter per Kelas -> per Sesi).
+  - Menampilkan daftar siswa lengkap dengan status penilaian dan rekap Total Nilai.
+  - **Auto-Grading Teori**: Jawaban hitungan Ampere siswa divalidasi otomatis oleh sistem saat guru memuat detail, dengan toleransi perbedaan desimal sebesar ±0.01 Ampere. Nilai benar untuk tiap soal adalah 25 poin (Maks 100).
+  - **Manual Grading Praktikum & Analisis**: Guru mengecek pembacaan sensor IoT siswa beserta laporan/kesimpulan mereka, lalu memberikan nilai secara manual dari 0-100.
+  - Nilai tidak dapat disimpan sebelum *tenggang waktu pengerjaan (deadline)* sesi terkait ditutup oleh sistem.
+  - **Kalkulasi Total Nilai**: Total Nilai dikalkulasi secara proporsional sebagai rata-rata dari tiga komponen: `Total = (Nilai Teori + Nilai Praktikum + Nilai Analisis) / 3`. Guru dapat memperbarui (Upsert) nilai manual tanpa menduplikasi data.
 
 ## 2.6. Fitur yang Sudah Diimplementasikan (Fase 3: Siswa Panel)
 - **Auto-Generate Soal Kuis (Backend)**:
