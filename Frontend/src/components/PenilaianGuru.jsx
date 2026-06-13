@@ -134,10 +134,10 @@ const PenilaianGuru = () => {
         const existingIndex = prev.findIndex(n => n.id_siswa === selectedSiswa.id_siswa && n.id_sesi === selectedSesi.id_sesi);
         if (existingIndex >= 0) {
           const newList = [...prev];
-          newList[existingIndex] = { ...newList[existingIndex], total_nilai: data.total_nilai, nilai_praktikum: pVal, nilai_analisis: aVal };
+          newList[existingIndex] = { ...newList[existingIndex], nilai_total: data.nilai_total, nilai_praktikum: pVal, nilai_analisis: aVal };
           return newList;
         } else {
-          return [...prev, { id_siswa: selectedSiswa.id_siswa, id_sesi: selectedSesi.id_sesi, total_nilai: data.total_nilai, nilai_praktikum: pVal, nilai_analisis: aVal }];
+          return [...prev, { id_siswa: selectedSiswa.id_siswa, id_sesi: selectedSesi.id_sesi, nilai_total: data.nilai_total, nilai_praktikum: pVal, nilai_analisis: aVal }];
         }
       });
 
@@ -311,7 +311,7 @@ const PenilaianGuru = () => {
                                         </span>
                                       </td>
                                       <td style={{ textAlign: 'center', fontWeight: 800, color: nilai ? 'var(--primary)' : 'var(--text-light)' }}>
-                                        {nilai ? nilai.total_nilai : '-'}
+                                        {nilai ? nilai.nilai_total : '-'}
                                       </td>
                                       <td style={{ textAlign: 'center' }}>
                                         <button 

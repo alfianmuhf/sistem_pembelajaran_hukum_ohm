@@ -984,12 +984,12 @@ app.get('/api/penilaian/sesi/:id_sesi/siswa', authenticateToken, async (req, res
       .eq('id_kelas', sesi.id_kelas)
       .order('nama_siswa', { ascending: true });
 
-    if (siswaErr) throw siswaErr;
+    if (siswaErr) return res.status(500).json({ message: 'Gagal mengambil data siswa.' });
 
     // Fetch grades for these students in this session
     const { data: nilaiData, error: nilaiErr } = await supabase
       .from('nilai_siswa')
-      .select('id_siswa, total_nilai')
+      .select('id_siswa, nilai_total')
       .eq('id_sesi', id_sesi);
 
     if (nilaiErr) throw nilaiErr;
@@ -997,14 +997,14 @@ app.get('/api/penilaian/sesi/:id_sesi/siswa', authenticateToken, async (req, res
     const nilaiMap = {};
     if (nilaiData) {
       nilaiData.forEach(n => {
-        nilaiMap[n.id_siswa] = n.total_nilai;
+        nilaiMap[n.id_siswa] = n.nilai_total;
       });
     }
 
-    const result = siswaData.map(s => ({
+    const siswaWithGrades = siswaData.map(s => ({
       ...s,
-      total_nilai: nilaiMap[s.id_siswa] !== undefined ? nilaiMap[s.id_siswa] : null,
-      status: nilaiMap[s.id_siswa] !== undefined ? 'Sudah Dinilai' : 'Belum Dinilai'
+      nilai_total: nilaiMap[s.id_siswa] !== undefined ? nilaiMap[s.id_siswa] : null,
+      status: nilaiMap[s.id_siswa] !== undefined && nilaiMap[s.id_siswa] !== null ? 'Sudah Dinilai' : 'Belum Dinilai'
     }));
 
     // Check if deadline has passed (required to grade)
@@ -1014,7 +1014,7 @@ app.get('/api/penilaian/sesi/:id_sesi/siswa', authenticateToken, async (req, res
     const now = localDate.toISOString().replace('Z', '');
     const isDeadlinePassed = sesi.tenggang_waktu < now;
 
-    res.json({ siswa: result, isDeadlinePassed });
+    res.json({ siswa: siswaWithGrades, isDeadlinePassed });
   } catch (error) {
     console.error('Error fetching siswa penilaian:', error);
     res.status(500).json({ message: 'Gagal mengambil data siswa.' });
@@ -1083,7 +1083,7 @@ app.post('/api/penilaian/simpan', authenticateToken, async (req, res) => {
     const a = Math.min(100, Math.max(0, parseFloat(nilai_analisis) || 0));
 
     // Total formula (average)
-    const total_nilai = Math.round((nilai_soal + p + a) / 3);
+    const nilai_total = Math.round((nilai_soal + p + a) / 3);
 
     const { data: existing } = await supabase.from('nilai_siswa').select('id_nilai_siswa').eq('id_sesi', id_sesi).eq('id_siswa', id_siswa).maybeSingle();
     
@@ -1092,7 +1092,7 @@ app.post('/api/penilaian/simpan', authenticateToken, async (req, res) => {
         nilai_soal, 
         nilai_praktikum: p, 
         nilai_analisis: a, 
-        total_nilai 
+        nilai_total 
       }).eq('id_nilai_siswa', existing.id_nilai_siswa);
     } else {
       await supabase.from('nilai_siswa').insert([{ 
@@ -1101,11 +1101,11 @@ app.post('/api/penilaian/simpan', authenticateToken, async (req, res) => {
         nilai_soal, 
         nilai_praktikum: p, 
         nilai_analisis: a, 
-        total_nilai 
+        nilai_total 
       }]);
     }
 
-    res.json({ message: 'Nilai berhasil disimpan.', total_nilai });
+    res.json({ message: 'Nilai berhasil disimpan.', nilai_total });
   } catch (error) {
     console.error('Error saving nilai:', error);
     res.status(500).json({ message: 'Gagal menyimpan nilai.' });
