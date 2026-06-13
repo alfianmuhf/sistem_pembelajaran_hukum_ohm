@@ -16,6 +16,7 @@ const SiswaSoal = () => {
   const [teoriAnswers, setTeoriAnswers] = useState({});
   const [praktikumAnswers, setPraktikumAnswers] = useState({});
   const [analisisText, setAnalisisText] = useState('');
+  const [selectedOhmESP, setSelectedOhmESP] = useState({});
   
   // IoT Simulation States
   const [isIotConnected, setIsIotConnected] = useState(false);
@@ -68,12 +69,15 @@ const SiswaSoal = () => {
         // Initialize empty answers
         const initialTeori = {};
         const initialPraktikum = {};
+        const initialOhm = {};
         data.forEach(s => {
           initialTeori[s.id_soal] = '';
           initialPraktikum[s.id_soal] = { volt: '', ampere: '' };
+          initialOhm[s.id_soal] = s.ohm.toString();
         });
         setTeoriAnswers(initialTeori);
         setPraktikumAnswers(initialPraktikum);
+        setSelectedOhmESP(initialOhm);
         setAnalisisText('');
         setIsSimulating({});
       }
@@ -403,13 +407,27 @@ const SiswaSoal = () => {
                             R: {item.ohm}Ω | V: {item.volt}V
                           </span>
                         </h4>
-                        <button 
-                          className={simulating ? "btn-secondary" : "btn-primary"} 
-                          style={simulating ? { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'transparent', padding: '6px 12px', fontSize: '12px' } : { background: 'var(--success)', padding: '6px 12px', fontSize: '12px' }}
-                          onClick={() => toggleSimulasi(item.id_soal)}
-                        >
-                          {simulating ? 'Stop Pembacaan' : 'Start Praktikum'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <select 
+                            className="form-input" 
+                            style={{ padding: '6px 24px 6px 10px', fontSize: '12px', height: 'auto', backgroundPosition: 'right 6px center', width: 'auto' }}
+                            value={selectedOhmESP[item.id_soal] || ''}
+                            onChange={(e) => setSelectedOhmESP({...selectedOhmESP, [item.id_soal]: e.target.value})}
+                            disabled={simulating}
+                          >
+                            <option value="220">220 Ω</option>
+                            <option value="330">330 Ω</option>
+                            <option value="470">470 Ω</option>
+                            <option value="680">680 Ω</option>
+                          </select>
+                          <button 
+                            className={simulating ? "btn-secondary" : "btn-primary"} 
+                            style={simulating ? { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'transparent', padding: '6px 12px', fontSize: '12px' } : { background: 'var(--success)', padding: '6px 12px', fontSize: '12px' }}
+                            onClick={() => toggleSimulasi(item.id_soal)}
+                          >
+                            {simulating ? 'Stop Pembacaan' : 'Start Praktikum'}
+                          </button>
+                        </div>
                       </div>
                       
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
