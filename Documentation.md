@@ -37,6 +37,7 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - **Kiri (Teori)**: Menampilkan 4 kotak soal perhitungan arus (Ampere) beserta input jawaban dan tombol "Simpan Jawaban" per nomor.
   - **Kanan (Praktikum IoT)**: Menampilkan 4 kotak soal pembacaan aktual sensor, lengkap dengan tombol "Start/Stop Praktikum" per nomor, dan tombol simpan data. Dilengkapi *Dropdown Selector* Ohm (220, 330, 470, 680) untuk mengatur status ESP secara spesifik per soal.
   - **Bawah (Analisis)**: Area *textarea* untuk mengetik laporan praktikum dan kesimpulan.
+  - **Notifikasi Kustom & Validasi IoT**: Penggunaan *alert* bawaan browser telah digantikan dengan *Toast Notification* kustom yang elegan di sudut kiri bawah layar (di atas indikator status IoT). Khusus untuk bagian praktikum, tombol "Simpan Jawaban" hanya aktif/dapat digunakan apabila status koneksi IoT mendeteksi bahwa perangkat telah terhubung, mencegah terjadinya pengiriman data yang tidak valid saat alat terputus.
 
 ## 3. Keamanan & Autentikasi (JWT)
 - **Otomatis Logout (Browser Close)**: Penyimpanan JWT menggunakan `sessionStorage` di sisi klien. Hal ini memastikan sesi login akan langsung terhapus dan pengguna ter-logout seketika saat jendela/tab *browser* ditutup.

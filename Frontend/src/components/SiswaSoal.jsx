@@ -22,6 +22,16 @@ const SiswaSoal = () => {
   const [isIotConnected, setIsIotConnected] = useState(false);
   const [isSimulating, setIsSimulating] = useState({}); // { [id_soal]: boolean }
   
+  // Toast Notification State
+  const [toastNotif, setToastNotif] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToastNotif({ message, type });
+    setTimeout(() => {
+      setToastNotif(null);
+    }, 3000);
+  };
+  
   // Saving states
   const [isSavingTeori, setIsSavingTeori] = useState({});
   const [isSavingPraktikum, setIsSavingPraktikum] = useState({});
@@ -93,7 +103,7 @@ const SiswaSoal = () => {
         setIsSimulating({});
       }
     } catch (err) {
-      alert('Gagal memuat soal untuk sesi ini.');
+      showToast('Gagal memuat soal untuk sesi ini.', 'error');
       setSelectedSesi(null);
     } finally {
       setIsLoadingSoal(false);
@@ -135,7 +145,7 @@ const SiswaSoal = () => {
   // Mock Start/Stop Praktikum per question
   const toggleSimulasi = (id_soal) => {
     if (!isIotConnected) {
-      alert("Hubungkan ke IoT Broker terlebih dahulu!");
+      showToast("Hubungkan ke IoT Broker terlebih dahulu!", 'error');
       return;
     }
     setIsSimulating(prev => ({
@@ -148,7 +158,7 @@ const SiswaSoal = () => {
   const handleSaveTeori = async (id_soal) => {
     const jawaban = teoriAnswers[id_soal];
     if (!jawaban) {
-      alert('Silakan isi jawaban terlebih dahulu.');
+      showToast('Silakan isi jawaban terlebih dahulu.', 'error');
       return;
     }
     setIsSavingTeori(prev => ({ ...prev, [id_soal]: true }));
@@ -161,9 +171,9 @@ const SiswaSoal = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      alert('Jawaban teori berhasil disimpan!');
+      showToast('Jawaban teori berhasil disimpan!');
     } catch (err) {
-      alert(err.message || 'Gagal menyimpan jawaban teori.');
+      showToast(err.message || 'Gagal menyimpan jawaban teori.', 'error');
     } finally {
       setIsSavingTeori(prev => ({ ...prev, [id_soal]: false }));
     }
@@ -173,7 +183,7 @@ const SiswaSoal = () => {
     const pData = praktikumAnswers[id_soal];
     const targetOhm = selectedOhmESP[id_soal];
     if (!pData.volt || !pData.ampere || !targetOhm) {
-      alert('Silakan lengkapi data volt, ampere, dan ohm terlebih dahulu.');
+      showToast('Silakan lengkapi data volt, ampere, dan ohm terlebih dahulu.', 'error');
       return;
     }
     setIsSavingPraktikum(prev => ({ ...prev, [id_soal]: true }));
@@ -188,9 +198,9 @@ const SiswaSoal = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      alert('Data praktikum berhasil disimpan!');
+      showToast('Data praktikum berhasil disimpan!');
     } catch (err) {
-      alert(err.message || 'Gagal menyimpan data praktikum.');
+      showToast(err.message || 'Gagal menyimpan data praktikum.', 'error');
     } finally {
       setIsSavingPraktikum(prev => ({ ...prev, [id_soal]: false }));
     }
@@ -198,7 +208,7 @@ const SiswaSoal = () => {
 
   const handleSaveAnalisis = async () => {
     if (!analisisText) {
-      alert('Silakan isi analisis terlebih dahulu.');
+      showToast('Silakan isi analisis terlebih dahulu.', 'error');
       return;
     }
     setIsSavingAnalisis(true);
@@ -211,9 +221,9 @@ const SiswaSoal = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      alert('Laporan analisis berhasil disimpan!');
+      showToast('Laporan analisis berhasil disimpan!');
     } catch (err) {
-      alert(err.message || 'Gagal menyimpan analisis.');
+      showToast(err.message || 'Gagal menyimpan analisis.', 'error');
     } finally {
       setIsSavingAnalisis(false);
     }
@@ -528,8 +538,13 @@ const SiswaSoal = () => {
                         <button 
                           className="btn-primary" 
                           onClick={() => handleSavePraktikum(item.id_soal)}
-                          disabled={isSavingPraktikum[item.id_soal]}
-                          style={{ padding: '8px 16px', fontSize: '13px' }}
+                          disabled={isSavingPraktikum[item.id_soal] || !isIotConnected}
+                          style={{ 
+                            padding: '8px 16px', 
+                            fontSize: '13px',
+                            opacity: (!isIotConnected) ? 0.5 : 1,
+                            cursor: (!isIotConnected) ? 'not-allowed' : 'pointer'
+                          }}
                         >
                           {isSavingPraktikum[item.id_soal] ? 'Loading...' : 'Simpan Jawaban'}
                         </button>
@@ -579,13 +594,47 @@ const SiswaSoal = () => {
         </>
       )}
 
+      {/* Toast Notification */}
+      {toastNotif && (
+        <div style={{
+          position: 'fixed',
+          bottom: '80px',
+          left: '24px',
+          background: toastNotif.type === 'success' ? '#10b981' : '#ef4444',
+          color: '#fff',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '14px',
+          fontWeight: 500,
+          animation: 'slideUp 0.3s ease-out'
+        }}>
+          {toastNotif.type === 'success' ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 6L9 17l-5-5"></path>
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          )}
+          {toastNotif.message}
+        </div>
+      )}
+
       {/* Floating IoT Indicator */}
       <div 
         onClick={toggleIot}
         style={{ 
           position: 'fixed', 
           bottom: '24px', 
-          right: '24px', 
+          left: '24px', 
           background: '#fff', 
           padding: '12px 20px', 
           borderRadius: '30px', 
@@ -614,6 +663,10 @@ const SiswaSoal = () => {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: .5; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
     </div>
