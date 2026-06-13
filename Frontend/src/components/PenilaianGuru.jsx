@@ -158,16 +158,10 @@ const PenilaianGuru = () => {
     }
   };
 
-  // Handle Toggle Remidi Checkbox
-  const handleToggleRemidi = (id_sesi, id_siswa) => {
-    setSelectedRemidi(prev => {
-      const exists = prev.find(item => item.id_sesi === id_sesi && item.id_siswa === id_siswa);
-      if (exists) {
-        return prev.filter(item => !(item.id_sesi === id_sesi && item.id_siswa === id_siswa));
-      } else {
-        return [...prev, { id_sesi, id_siswa }];
-      }
-    });
+  // Handle Open Remidi Bulk
+  const handleOpenRemidiBulk = (id_sesi, siswaListForRemidi) => {
+    setSelectedRemidi(siswaListForRemidi.map(s => ({ id_sesi, id_siswa: s.id_siswa })));
+    setIsRemidiModalOpen(true);
   };
 
   // Handle Submit Remidi
