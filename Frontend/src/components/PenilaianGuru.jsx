@@ -158,6 +158,24 @@ const PenilaianGuru = () => {
     }
   };
 
+  // Handle Generate Missing
+  const handleGenerateMissing = async (sesiRemidi) => {
+    if (!window.confirm(`Generate soal susulan untuk peserta remidi di Sesi ${sesiRemidi.sesi}?`)) return;
+    try {
+      const token = sessionStorage.getItem('ohm_session_token');
+      const res = await fetch(`${API_URL}/sesi/${sesiRemidi.id_sesi}/generate-missing`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal meng-generate soal susulan.');
+      showToast(data.message, 'success');
+      fetchRekap(); // Refresh data
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   // Handle Open Remidi Bulk
   const handleOpenRemidiBulk = (id_sesi, siswaListForRemidi) => {
     setSelectedRemidi(siswaListForRemidi.map(s => ({ id_sesi, id_siswa: s.id_siswa })));
@@ -340,6 +358,21 @@ const PenilaianGuru = () => {
                                       </span>
                                       {(() => {
                                         if (sesi.tipe?.toLowerCase() === 'remidi') return null;
+                                        
+                                        const existingRemidiSesi = sesiList.find(s => s.id_sesi_sebelum === sesi.id_sesi && s.tipe?.toLowerCase() === 'remidi');
+                                        if (existingRemidiSesi) {
+                                          return (
+                                            <button 
+                                              className="btn-primary"
+                                              onClick={(e) => { e.stopPropagation(); handleGenerateMissing(existingRemidiSesi); }}
+                                              style={{ marginLeft: '12px', padding: '4px 12px', fontSize: '12px', background: 'var(--success)' }}
+                                              title="Generate soal bagi siswa remidi yang belum mendapatkan soal"
+                                            >
+                                              Generate Susulan Remidi
+                                            </button>
+                                          );
+                                        }
+
                                         const siswaButuhRemidi = siswaKelas.filter(s => {
                                           const n = nilaiList.find(nl => nl.id_siswa === s.id_siswa && nl.id_sesi === sesi.id_sesi);
                                           return n && n.nilai_total !== null && n.nilai_total < 71;

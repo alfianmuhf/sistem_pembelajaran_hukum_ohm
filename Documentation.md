@@ -34,6 +34,7 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
     - **Visualisasi Total Nilai**: Tampilan `nilai_total` diwarnai **biru** (primary) jika sudah tuntas (>= 71) dan **merah** (danger) jika masih di bawah batas tuntas (< 71).
     - Jika terdapat siswa dengan `total_nilai < 71` dalam sebuah sesi utama, tombol cerdas **"Buat Sesi Remidi (N Siswa)"** akan otomatis muncul sejajar dengan judul sesi tersebut. Tidak perlu mencentang siswa satu per satu.
     - Sistem kemudian secara otomatis membuat Sesi Baru ber-tipe `remidi` yang terhubung ke sesi aslinya (`id_sesi_sebelum`), dan meng-generate 4 soal (Volt, Ohm, Ampere) **secara eksklusif** hanya untuk siswa yang memenuhi syarat remidi tersebut. Sesi remidi ini akan muncul sebagai sub-kategori baru di bawah kelas yang sama.
+    - **Limitasi 1x Remidi**: Tiap sesi utama hanya diizinkan untuk dibuatkan 1 sesi remidi. Jika sesi remidi sudah pernah dibuat untuk sesi tersebut, tombol "Buat Sesi Remidi" akan berubah menjadi tombol **"Generate Susulan Remidi"**. Tombol ini berfungsi untuk memastikan apakah ada siswa remidi yang belum ter-*generate* soalnya akibat kendala koneksi atau sejenisnya.
     - Pada Sesi Remidi, tombol "Buat Sesi Remidi" akan disembunyikan untuk mencegah remidi berlapis.
     - **Generate Susulan pada Remidi**: Fitur _Generate_ ulang soal pada sesi Remidi kini didesain spesifik, hanya membuat soal susulan bagi siswa target remidi yang secara sistem belum mendapatkan soal, tanpa mempengaruhi siswa yang tuntas.
 
