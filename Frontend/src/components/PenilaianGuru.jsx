@@ -128,13 +128,16 @@ const PenilaianGuru = () => {
       
       // Update local nilai list
       setNilaiList(prev => {
+        const pVal = nilaiPraktikum === '' ? null : Number(nilaiPraktikum);
+        const aVal = nilaiAnalisis === '' ? null : Number(nilaiAnalisis);
+        
         const existingIndex = prev.findIndex(n => n.id_siswa === selectedSiswa.id_siswa && n.id_sesi === selectedSesi.id_sesi);
         if (existingIndex >= 0) {
           const newList = [...prev];
-          newList[existingIndex] = { ...newList[existingIndex], total_nilai: data.total_nilai };
+          newList[existingIndex] = { ...newList[existingIndex], total_nilai: data.total_nilai, nilai_praktikum: pVal, nilai_analisis: aVal };
           return newList;
         } else {
-          return [...prev, { id_siswa: selectedSiswa.id_siswa, id_sesi: selectedSesi.id_sesi, total_nilai: data.total_nilai }];
+          return [...prev, { id_siswa: selectedSiswa.id_siswa, id_sesi: selectedSesi.id_sesi, total_nilai: data.total_nilai, nilai_praktikum: pVal, nilai_analisis: aVal }];
         }
       });
 
@@ -285,7 +288,11 @@ const PenilaianGuru = () => {
                               ) : (
                                 siswaKelas.map(siswa => {
                                   const nilai = nilaiList.find(n => n.id_siswa === siswa.id_siswa && n.id_sesi === sesi.id_sesi);
-                                  const statusStr = nilai ? 'Sudah Dinilai' : 'Belum Dinilai';
+                                  const isDinilai = nilai && (
+                                    (nilai.nilai_praktikum !== null && nilai.nilai_praktikum !== undefined) || 
+                                    (nilai.nilai_analisis !== null && nilai.nilai_analisis !== undefined)
+                                  );
+                                  const statusStr = isDinilai ? 'Sudah Dinilai' : 'Belum Dinilai';
                                   
                                   return (
                                     <tr key={`${sesi.id_sesi}-${siswa.id_siswa}`}>
@@ -293,8 +300,8 @@ const PenilaianGuru = () => {
                                       <td>{siswa.nama_siswa}</td>
                                       <td>
                                         <span style={{ 
-                                          background: nilai ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-                                          color: nilai ? 'var(--success)' : 'var(--danger)', 
+                                          background: isDinilai ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+                                          color: isDinilai ? 'var(--success)' : 'var(--danger)', 
                                           padding: '4px 10px', 
                                           borderRadius: '12px', 
                                           fontSize: '12px', 
