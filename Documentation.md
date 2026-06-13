@@ -35,9 +35,12 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - Menampilkan sesi yang masih berjalan dalam bentuk kotak (Card) berisi informasi: Tipe Sesi, Tanggal Dibuat, dan Tenggang Waktu (Tutup). Sesi yang sudah melewati batas waktu akan otomatis hilang.
 - **Halaman Pengerjaan Soal (Split-Screen)**:
   - **Kiri (Teori)**: Menampilkan 4 kotak soal perhitungan arus (Ampere) beserta input jawaban dan tombol "Simpan Jawaban" per nomor.
-  - **Kanan (Praktikum IoT)**: Menampilkan 4 kotak soal pembacaan aktual sensor, lengkap dengan tombol "Start/Stop Praktikum" per nomor, dan tombol simpan data. Dilengkapi *Dropdown Selector* Ohm (220, 330, 470, 680) untuk mengatur status ESP secara spesifik per soal.
+  - **Kanan (Praktikum IoT)**: Menampilkan 4 kotak soal pembacaan aktual sensor, lengkap dengan tombol "Start/Stop Praktikum" per nomor, dan tombol simpan data. Dilengkapi *Dropdown Selector* Ohm (220, 330, 470, 680) untuk mengatur status ESP secara spesifik per soal. Tombol simpan pada bagian ini dikunci (disabled) jika koneksi IoT terputus.
   - **Bawah (Analisis)**: Area *textarea* untuk mengetik laporan praktikum dan kesimpulan.
-  - **Notifikasi Kustom & Validasi IoT**: Penggunaan *alert* bawaan browser telah digantikan dengan *Toast Notification* kustom yang elegan di sudut kiri bawah layar (di atas indikator status IoT). Khusus untuk bagian praktikum, tombol "Simpan Jawaban" hanya aktif/dapat digunakan apabila status koneksi IoT mendeteksi bahwa perangkat telah terhubung, mencegah terjadinya pengiriman data yang tidak valid saat alat terputus.
+- **Sistem Penyimpanan Terintegrasi (Upsert)**:
+  - Seluruh fitur penyimpanan (Teori, Praktikum, Analisis) mendukung penyimpanan berulang. Sistem akan secara otomatis memperbarui (*update*) jawaban sebelumnya jika sudah pernah disimpan, tanpa menduplikasi data.
+- **Notifikasi Modern (Toast)**:
+  - *Pop-up alert* bawaan browser telah digantikan dengan notifikasi *toast* elegan di pojok kanan bawah (muncul di atas indikator status IoT) untuk setiap keberhasilan atau kegagalan penyimpanan.
 
 ## 3. Keamanan & Autentikasi (JWT)
 - **Otomatis Logout (Browser Close)**: Penyimpanan JWT menggunakan `sessionStorage` di sisi klien. Hal ini memastikan sesi login akan langsung terhapus dan pengguna ter-logout seketika saat jendela/tab *browser* ditutup.
