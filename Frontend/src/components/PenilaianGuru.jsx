@@ -31,6 +31,7 @@ const PenilaianGuru = () => {
   const [selectedRemidi, setSelectedRemidi] = useState([]);
   const [pesertaRemidiData, setPesertaRemidiData] = useState([]);
   const [isRemidiModalOpen, setIsRemidiModalOpen] = useState(false);
+  const [confirmGenerateModal, setConfirmGenerateModal] = useState({ isOpen: false, sesi: null });
   const [remidiDeadline, setRemidiDeadline] = useState('');
   const [isRemidiSubmitting, setIsRemidiSubmitting] = useState(false);
 
@@ -159,8 +160,11 @@ const PenilaianGuru = () => {
   };
 
   // Handle Generate Missing
-  const handleGenerateMissing = async (sesiRemidi) => {
-    if (!window.confirm(`Generate soal susulan untuk peserta remidi di Sesi ${sesiRemidi.sesi}?`)) return;
+  const handleGenerateMissing = async () => {
+    const sesiRemidi = confirmGenerateModal.sesi;
+    if (!sesiRemidi) return;
+    
+    setConfirmGenerateModal({ isOpen: false, sesi: null });
     try {
       const token = sessionStorage.getItem('ohm_session_token');
       const res = await fetch(`${API_URL}/sesi/${sesiRemidi.id_sesi}/generate-missing`, {
@@ -240,15 +244,6 @@ const PenilaianGuru = () => {
           <p>Daftar seluruh siswa berdasarkan kelas dan sesi. Klik "Lihat Detail" untuk memeriksa dan menginput nilai manual.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {selectedRemidi.length > 0 && (
-            <button 
-              className="btn-primary" 
-              onClick={() => setIsRemidiModalOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--accent)' }}
-            >
-              Buat Sesi Remidi ({selectedRemidi.length})
-            </button>
-          )}
           <button className="btn-secondary" onClick={fetchRekap} disabled={isLoading} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 4 23 10 17 10"></polyline>
@@ -364,7 +359,7 @@ const PenilaianGuru = () => {
                                           return (
                                             <button 
                                               className="btn-primary"
-                                              onClick={(e) => { e.stopPropagation(); handleGenerateMissing(existingRemidiSesi); }}
+                                              onClick={(e) => { e.stopPropagation(); setConfirmGenerateModal({ isOpen: true, sesi: existingRemidiSesi }); }}
                                               style={{ marginLeft: '12px', padding: '4px 12px', fontSize: '12px', background: 'var(--success)' }}
                                               title="Generate soal bagi siswa remidi yang belum mendapatkan soal"
                                             >
@@ -651,6 +646,37 @@ const PenilaianGuru = () => {
                   </form>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Generate Susulan Remidi Modal */}
+      {confirmGenerateModal.isOpen && confirmGenerateModal.sesi && (
+        <div className="modal-overlay" onClick={() => setConfirmGenerateModal({ isOpen: false, sesi: null })}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3>Konfirmasi Susulan</h3>
+              <button className="modal-close" onClick={() => setConfirmGenerateModal({ isOpen: false, sesi: null })}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '20px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-main)', margin: 0, lineHeight: '1.6' }}>
+                Apakah Anda yakin ingin meng-generate soal susulan untuk peserta remidi di <strong>Sesi {confirmGenerateModal.sesi.sesi}</strong>?
+              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '8px' }}>
+                Siswa yang belum mendapatkan soal remidi akan secara otomatis di-generate soalnya.
+              </p>
+            </div>
+            <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: '#f8fafc' }}>
+              <button type="button" className="btn-secondary" onClick={() => setConfirmGenerateModal({ isOpen: false, sesi: null })}>Tidak</button>
+              <button type="button" className="btn-primary" style={{ background: 'var(--success)' }} onClick={handleGenerateMissing}>
+                Ya, Generate
+              </button>
             </div>
           </div>
         </div>
