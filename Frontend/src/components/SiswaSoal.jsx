@@ -59,26 +59,37 @@ const SiswaSoal = () => {
     setSoalList([]);
     try {
       const token = sessionStorage.getItem('ohm_session_token');
-      const res = await fetch(`${API_URL}/kuis/${sesi.id_sesi}/soal`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const [soalRes, jawabanRes] = await Promise.all([
+        fetch(`${API_URL}/kuis/${sesi.id_sesi}/soal`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/kuis/${sesi.id_sesi}/jawaban`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
       
-      if (res.ok && Array.isArray(data)) {
+      const data = await soalRes.json();
+      const jawabanData = jawabanRes.ok ? await jawabanRes.json() : { teori: [], praktikum: [], analisis: null };
+      
+      if (soalRes.ok && Array.isArray(data)) {
         setSoalList(data);
-        // Initialize empty answers
+        // Initialize answers
         const initialTeori = {};
         const initialPraktikum = {};
         const initialOhm = {};
+        
         data.forEach(s => {
-          initialTeori[s.id_soal] = '';
-          initialPraktikum[s.id_soal] = { volt: '', ampere: '' };
+          const tAns = jawabanData.teori.find(t => t.id_soal === s.id_soal);
+          initialTeori[s.id_soal] = tAns && tAns.jawaban_soal !== null ? tAns.jawaban_soal.toString() : '';
+          
+          const pAns = jawabanData.praktikum.find(p => p.id_soal === s.id_soal);
+          initialPraktikum[s.id_soal] = { 
+            volt: pAns && pAns.volt_sensor !== null ? pAns.volt_sensor.toString() : '', 
+            ampere: pAns && pAns.ampere_sensor !== null ? pAns.ampere_sensor.toString() : '' 
+          };
           initialOhm[s.id_soal] = s.ohm.toString();
         });
+        
         setTeoriAnswers(initialTeori);
         setPraktikumAnswers(initialPraktikum);
         setSelectedOhmESP(initialOhm);
-        setAnalisisText('');
+        setAnalisisText(jawabanData.analisis?.analisis_siswa || '');
         setIsSimulating({});
       }
     } catch (err) {
@@ -133,29 +144,79 @@ const SiswaSoal = () => {
     }));
   };
 
-  // Handle Save (Mock)
-  const handleSaveTeori = (id_soal) => {
+  // API Save Handlers
+  const handleSaveTeori = async (id_soal) => {
+    const jawaban = teoriAnswers[id_soal];
+    if (!jawaban) {
+      alert('Silakan isi jawaban terlebih dahulu.');
+      return;
+    }
     setIsSavingTeori(prev => ({ ...prev, [id_soal]: true }));
-    setTimeout(() => {
+    try {
+      const token = sessionStorage.getItem('ohm_session_token');
+      const res = await fetch(`${API_URL}/jawaban/teori`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_soal, jawaban_soal: parseFloat(jawaban) })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      alert('Jawaban teori berhasil disimpan!');
+    } catch (err) {
+      alert(err.message || 'Gagal menyimpan jawaban teori.');
+    } finally {
       setIsSavingTeori(prev => ({ ...prev, [id_soal]: false }));
-      alert(`Jawaban teori Soal ${id_soal} tersimpan secara lokal (Mockup).`);
-    }, 800);
+    }
   };
 
-  const handleSavePraktikum = (id_soal) => {
+  const handleSavePraktikum = async (id_soal) => {
+    const pData = praktikumAnswers[id_soal];
+    const targetOhm = selectedOhmESP[id_soal];
+    if (!pData.volt || !pData.ampere || !targetOhm) {
+      alert('Silakan lengkapi data volt, ampere, dan ohm terlebih dahulu.');
+      return;
+    }
     setIsSavingPraktikum(prev => ({ ...prev, [id_soal]: true }));
-    setTimeout(() => {
+    try {
+      const token = sessionStorage.getItem('ohm_session_token');
+      const res = await fetch(`${API_URL}/jawaban/praktikum`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_soal, volt_sensor: parseFloat(pData.volt), ohm_sensor: parseFloat(targetOhm), ampere_sensor: parseFloat(pData.ampere)
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      alert('Data praktikum berhasil disimpan!');
+    } catch (err) {
+      alert(err.message || 'Gagal menyimpan data praktikum.');
+    } finally {
       setIsSavingPraktikum(prev => ({ ...prev, [id_soal]: false }));
-      alert(`Data praktikum Soal ${id_soal} tersimpan secara lokal (Mockup).`);
-    }, 800);
+    }
   };
 
-  const handleSaveAnalisis = () => {
+  const handleSaveAnalisis = async () => {
+    if (!analisisText) {
+      alert('Silakan isi analisis terlebih dahulu.');
+      return;
+    }
     setIsSavingAnalisis(true);
-    setTimeout(() => {
+    try {
+      const token = sessionStorage.getItem('ohm_session_token');
+      const res = await fetch(`${API_URL}/jawaban/analisis`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_sesi: selectedSesi.id_sesi, analisis_siswa: analisisText })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      alert('Laporan analisis berhasil disimpan!');
+    } catch (err) {
+      alert(err.message || 'Gagal menyimpan analisis.');
+    } finally {
       setIsSavingAnalisis(false);
-      alert('Analisis tersimpan secara lokal (Mockup).');
-    }, 1000);
+    }
   };
 
   const handleTeoriChange = (id_soal, value) => {

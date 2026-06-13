@@ -837,6 +837,96 @@ app.get('/api/kuis/:id_sesi/soal', authenticateToken, async (req, res) => {
   }
 });
 
+// --- JAWABAN SISWA ---
+
+// GET All Jawaban by Sesi
+app.get('/api/kuis/:id_sesi/jawaban', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'siswa') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_sesi } = req.params;
+
+  try {
+    // Get all soal for this student in this session
+    const { data: soalData } = await supabase.from('soal').select('id_soal').eq('id_sesi', id_sesi).eq('id_siswa', req.user.id);
+    const soalIds = soalData ? soalData.map(s => s.id_soal) : [];
+
+    let teori = [];
+    let praktikum = [];
+    let analisis = null;
+
+    if (soalIds.length > 0) {
+      const { data: tData } = await supabase.from('jawaban_soal_siswa').select('*').in('id_soal', soalIds);
+      teori = tData || [];
+      const { data: pData } = await supabase.from('jawaban_praktikum_siswa').select('*').in('id_soal', soalIds);
+      praktikum = pData || [];
+    }
+
+    const { data: aData } = await supabase.from('jawaban_analisis_siswa').select('*').eq('id_sesi', id_sesi).eq('id_siswa', req.user.id).maybeSingle();
+    analisis = aData;
+
+    res.json({ teori, praktikum, analisis });
+  } catch (error) {
+    console.error('Error fetching jawaban:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan saat mengambil jawaban.' });
+  }
+});
+
+// POST Jawaban Teori
+app.post('/api/jawaban/teori', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'siswa') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_soal, jawaban_soal } = req.body;
+
+  try {
+    const { data: existing } = await supabase.from('jawaban_soal_siswa').select('id_jawaban_soal_siswa').eq('id_soal', id_soal).maybeSingle();
+    if (existing) {
+      await supabase.from('jawaban_soal_siswa').update({ jawaban_soal }).eq('id_jawaban_soal_siswa', existing.id_jawaban_soal_siswa);
+    } else {
+      await supabase.from('jawaban_soal_siswa').insert([{ id_soal, jawaban_soal }]);
+    }
+    res.json({ message: 'Jawaban teori berhasil disimpan.' });
+  } catch (error) {
+    console.error('Error saving teori:', error);
+    res.status(500).json({ message: 'Gagal menyimpan jawaban teori.' });
+  }
+});
+
+// POST Jawaban Praktikum
+app.post('/api/jawaban/praktikum', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'siswa') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_soal, volt_sensor, ohm_sensor, ampere_sensor } = req.body;
+
+  try {
+    const { data: existing } = await supabase.from('jawaban_praktikum_siswa').select('id_jawaban_praktikum_siswa').eq('id_soal', id_soal).maybeSingle();
+    if (existing) {
+      await supabase.from('jawaban_praktikum_siswa').update({ volt_sensor, ohm_sensor, ampere_sensor }).eq('id_jawaban_praktikum_siswa', existing.id_jawaban_praktikum_siswa);
+    } else {
+      await supabase.from('jawaban_praktikum_siswa').insert([{ id_soal, volt_sensor, ohm_sensor, ampere_sensor }]);
+    }
+    res.json({ message: 'Data praktikum berhasil disimpan.' });
+  } catch (error) {
+    console.error('Error saving praktikum:', error);
+    res.status(500).json({ message: 'Gagal menyimpan data praktikum.' });
+  }
+});
+
+// POST Jawaban Analisis
+app.post('/api/jawaban/analisis', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'siswa') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_sesi, analisis_siswa } = req.body;
+
+  try {
+    const { data: existing } = await supabase.from('jawaban_analisis_siswa').select('id_jawaban_analisis_siswa').eq('id_sesi', id_sesi).eq('id_siswa', req.user.id).maybeSingle();
+    if (existing) {
+      await supabase.from('jawaban_analisis_siswa').update({ analisis_siswa }).eq('id_jawaban_analisis_siswa', existing.id_jawaban_analisis_siswa);
+    } else {
+      await supabase.from('jawaban_analisis_siswa').insert([{ id_sesi, id_siswa: req.user.id, analisis_siswa }]);
+    }
+    res.json({ message: 'Analisis berhasil disimpan.' });
+  } catch (error) {
+    console.error('Error saving analisis:', error);
+    res.status(500).json({ message: 'Gagal menyimpan analisis.' });
+  }
+});
+
 // Root check endpoint
 app.get('/', (req, res) => {
   res.send('Backend API Smart Learning OHM is running.');
