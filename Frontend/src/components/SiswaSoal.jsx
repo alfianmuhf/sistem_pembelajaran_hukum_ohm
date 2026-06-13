@@ -398,7 +398,7 @@ const SiswaSoal = () => {
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '18px' }}>Perhitungan Teori</h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-medium)' }}>Hitung nilai Arus (Ampere) berdasarkan Hukum Ohm (I = V / R)</p>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-medium)' }}>Hitung nilai Arus (miliAmpere / mA) berdasarkan Hukum Ohm (I = V / R)</p>
                 </div>
               </div>
 
@@ -417,19 +417,19 @@ const SiswaSoal = () => {
                       </div>
                     </div>
                     <div>
-                      <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Jawaban Arus (I) Teoritis:</label>
+                      <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Jawaban Arus (I) Teoritis (mA):</label>
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <div style={{ position: 'relative', flex: 1 }}>
                           <input 
                             type="number" 
-                            step="0.0001"
-                            placeholder="Contoh: 0.054"
+                            step="0.01"
+                            placeholder="Contoh: 22.73"
                             className="form-input" 
                             style={{ paddingRight: '40px', background: '#fff' }}
                             value={teoriAnswers[item.id_soal] || ''}
                             onChange={(e) => handleTeoriChange(item.id_soal, e.target.value)}
                           />
-                          <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-medium)', fontWeight: 600 }}>A</span>
+                          <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-medium)', fontWeight: 600 }}>mA</span>
                         </div>
                         <button 
                           className="btn-primary" 
@@ -518,18 +518,18 @@ const SiswaSoal = () => {
                           </div>
                         </div>
                         <div>
-                          <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Ampere (Sensor)</label>
+                          <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>miliAmpere (Sensor)</label>
                           <div style={{ position: 'relative' }}>
                             <input 
                               type="number" 
-                              step="0.0001"
-                              placeholder="0.052"
+                              step="0.01"
+                              placeholder="22.73"
                               className="form-input" 
                               style={{ paddingRight: '30px' }}
                               value={praktikumAnswers[item.id_soal]?.ampere || ''}
                               onChange={(e) => handlePraktikumChange(item.id_soal, 'ampere', e.target.value)}
                             />
-                            <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', fontSize: '14px' }}>A</span>
+                            <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', fontSize: '14px' }}>mA</span>
                           </div>
                         </div>
                       </div>
