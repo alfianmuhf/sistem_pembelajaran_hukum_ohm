@@ -22,6 +22,17 @@ const PenilaianGuru = () => {
   const [nilaiAnalisis, setNilaiAnalisis] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // UI States
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [collapsedClasses, setCollapsedClasses] = useState({});
+  const [collapsedSessions, setCollapsedSessions] = useState({});
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+
   // Helper function: Check if session deadline has passed
   const isExpired = (tenggang_waktu) => {
     if (!tenggang_waktu) return true;
@@ -128,9 +139,9 @@ const PenilaianGuru = () => {
       });
 
       setIsDetailOpen(false);
-      alert('Nilai berhasil disimpan!');
+      showToast('Nilai berhasil disimpan!', 'success');
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setIsSaving(false);
     }
@@ -199,21 +210,32 @@ const PenilaianGuru = () => {
                   return (
                     <React.Fragment key={kelas.id_kelas}>
                       {/* Kelas Header */}
-                      <tr style={{ background: 'rgba(59, 130, 246, 0.05)' }}>
+                      <tr 
+                        style={{ background: 'rgba(59, 130, 246, 0.05)', cursor: 'pointer' }}
+                        onClick={() => setCollapsedClasses(prev => ({...prev, [kelas.id_kelas]: !prev[kelas.id_kelas]}))}
+                      >
                         <td colSpan="5" style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--primary)', borderBottom: '2px solid rgba(59, 130, 246, 0.2)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                              <circle cx="9" cy="7" r="4" />
-                              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                              </svg>
+                              Kelas: {kelas.nama_kelas}
+                            </div>
+                            <svg 
+                              width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                              style={{ transform: collapsedClasses[kelas.id_kelas] ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+                            >
+                              <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
-                            Kelas: {kelas.nama_kelas}
                           </div>
                         </td>
                       </tr>
 
-                      {sesiKelas.length === 0 ? (
+                      {!collapsedClasses[kelas.id_kelas] && (sesiKelas.length === 0 ? (
                         <tr>
                           <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontStyle: 'italic' }}>
                             Belum ada sesi di kelas ini.
@@ -225,25 +247,36 @@ const PenilaianGuru = () => {
                           return (
                             <React.Fragment key={sesi.id_sesi}>
                               {/* Sesi Sub-Header */}
-                              <tr style={{ background: '#f8fafc' }}>
+                              <tr 
+                                style={{ background: '#f8fafc', cursor: 'pointer' }}
+                                onClick={() => setCollapsedSessions(prev => ({...prev, [sesi.id_sesi]: !prev[sesi.id_sesi]}))}
+                              >
                                 <td colSpan="5" style={{ padding: '10px 20px', paddingLeft: '40px', fontWeight: 700, color: 'var(--text-main)', borderBottom: '1px solid #e2e8f0' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    Sesi {sesi.sesi} - {sesi.tipe}
-                                    <span style={{ 
-                                      fontSize: '11px', 
-                                      padding: '2px 8px', 
-                                      borderRadius: '10px', 
-                                      background: isPastDeadline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                      color: isPastDeadline ? 'var(--success)' : 'var(--warning-dark)'
-                                    }}>
-                                      {isPastDeadline ? 'Berakhir' : 'Berjalan'}
-                                    </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      Sesi {sesi.sesi} - {sesi.tipe}
+                                      <span style={{ 
+                                        fontSize: '11px', 
+                                        padding: '2px 8px', 
+                                        borderRadius: '10px', 
+                                        background: isPastDeadline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                        color: isPastDeadline ? 'var(--success)' : 'var(--warning-dark)'
+                                      }}>
+                                        {isPastDeadline ? 'Berakhir' : 'Berjalan'}
+                                      </span>
+                                    </div>
+                                    <svg 
+                                      width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                      style={{ transform: collapsedSessions[sesi.id_sesi] ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'var(--text-light)' }}
+                                    >
+                                      <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
                                   </div>
                                 </td>
                               </tr>
                               
                               {/* Siswa Rows for this Sesi */}
-                              {siswaKelas.length === 0 ? (
+                              {!collapsedSessions[sesi.id_sesi] && (siswaKelas.length === 0 ? (
                                 <tr>
                                   <td colSpan="5" style={{ textAlign: 'center', padding: '16px', paddingLeft: '60px', color: 'var(--text-light)', fontStyle: 'italic' }}>
                                     Belum ada siswa terdaftar.
@@ -285,11 +318,11 @@ const PenilaianGuru = () => {
                                     </tr>
                                   );
                                 })
-                              )}
+                              ))}
                             </React.Fragment>
                           );
                         })
-                      )}
+                      ))}
                     </React.Fragment>
                   );
                 })
@@ -484,6 +517,32 @@ const PenilaianGuru = () => {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <div style={{
+        position: 'fixed',
+        bottom: '24px',
+        right: '24px',
+        background: toast.type === 'success' ? '#10b981' : '#ef4444',
+        color: '#fff',
+        padding: '12px 24px',
+        borderRadius: 'var(--radius-md)',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        transform: toast.show ? 'translateX(0)' : 'translateX(120%)',
+        opacity: toast.show ? 1 : 0,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        zIndex: 9999
+      }}>
+        {toast.type === 'success' ? (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        )}
+        <span style={{ fontWeight: 500, fontSize: '14px' }}>{toast.message}</span>
+      </div>
     </>
   );
 };
