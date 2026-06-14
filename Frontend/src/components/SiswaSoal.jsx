@@ -702,7 +702,6 @@ const SiswaSoal = () => {
 
       {/* Floating IoT Indicator */}
       <div 
-        onClick={toggleIot}
         style={{ 
           position: 'fixed', 
           bottom: '24px', 
@@ -714,7 +713,6 @@ const SiswaSoal = () => {
           display: 'flex', 
           alignItems: 'center', 
           gap: '12px',
-          cursor: 'pointer',
           border: `1px solid ${isIotConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
           zIndex: 100
         }}
