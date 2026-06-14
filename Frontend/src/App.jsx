@@ -6,6 +6,7 @@ import SiswaAdmin from './components/SiswaAdmin'
 import SesiGuru from './components/SesiGuru'
 import SiswaSoal from './components/SiswaSoal'
 import PenilaianGuru from './components/PenilaianGuru'
+import SiswaMateri from './components/SiswaMateri'
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 function App() {
@@ -342,22 +343,7 @@ function App() {
         )
 
       case 'materi':
-        return (
-          <>
-            <div className="page-header">
-              <h2>Materi Pembelajaran Hukum Ohm</h2>
-              <p>Pelajari konsep dasar Tegangan, Hambatan, dan Arus Listrik serta rumus Hukum Ohm sebelum memulai kuis dan praktikum.</p>
-            </div>
-            <div className="placeholder-card">
-              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-              </svg>
-              <h3>Halaman Materi Pembelajaran (Siswa)</h3>
-              <p>Materi interaktif tentang Hukum Ohm (teks, gambar, dan simulasi kelistrikan) akan ditampilkan di sini pada tahap pengembangan berikutnya.</p>
-            </div>
-          </>
-        )
+        return <SiswaMateri />;
 
       case 'soal':
         return <SiswaSoal />;
