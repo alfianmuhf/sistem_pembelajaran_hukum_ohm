@@ -98,5 +98,28 @@ Sistem ini dipisah menjadi dua repositori internal dalam satu *workspace* (Front
 - `react-router-dom`: (Dipersiapkan jika aplikasi di-skala menjadi arsitektur halaman majemuk yang lebih besar).
 - `vite`: Build tool pengembangan generasi baru yang sangat cepat dan ringan.
 
+### 🔌 Arsitektur IoT Terintegrasi (ESP32 - Backend - Frontend)
+
+Sistem Web IoT ini dilengkapi dengan arsitektur **End-to-End Real-Time IoT**.
+
+1. **Hardware (ESP32)**:
+   - Terhubung secara aman ke internet menggunakan jaringan WiFi (konfigurasi nama WiFi `X1` dan *password* `89898989`).
+   - Berkomunikasi menggunakan protokol **MQTT** dengan *port* **TLS 8883** ke *Broker Cloud* pihak ketiga (HiveMQ).
+   - ESP32 mem-*publish* paket data sensor (Suhu dari DS18B20, Tegangan dari ESP32 ADC, dan Arus/Shunt dari INA226) secara periodik setiap 1 detik dalam format JSON ke topik `ohm/sensor/data`.
+   - Menggunakan fitur **Last Will and Testament (LWT)** MQTT untuk mendeteksi apabila perangkat mati atau terputus secara mendadak.
+   
+2. **Backend (Node.js/Express)**:
+   - Bertindak sebagai penghubung dan otak komunikasi.
+   - Terhubung sebagai *Client MQTT* ke Broker HiveMQ yang sama.
+   - Menginisiasi koneksi **WebSocket Server** secara native (modul `ws`) yang dipasang pada satu *port* yang sama dengan HTTP Express.
+   - Mem-*bridge* alias meneruskan pesan dari topik MQTT secara langsung (*real-time*) ke seluruh WebSocket *Client* (Siswa/Frontend) yang sedang terkoneksi.
+   
+3. **Frontend (SiswaSoal.jsx)**:
+   - Terhubung melalui WebSocket (*Native*) menuju *Backend*.
+   - **Kontrol 2-Arah**: Siswa dapat mengontrol *Hardware* (relai/resistor) langsung dari *dropdown* resistor di layar. *Frontend* mengirim pesan via *WebSocket*, yang kemudian diteruskan oleh *Backend* ke topik MQTT `ohm/control/resistor`, dan dieksekusi secara instan oleh ESP32.
+   - Menampilkan status *"Online"* / *"Offline"* dari alat secara *real-time* berdasarkan status LWT perangkat.
+   - Mengisi data Praktikum secara otomatis (Volt, Ampere, Suhu) mengikuti bacaan MQTT saat tombol "Start Praktikum" dinyalakan.
+
 ---
+
 *Dokumen ini dibuat sebagai referensi pusat untuk menjamin proses serah terima (handoff) pengembangan ke tahap selanjutnya, asisten AI lain, maupun perangkat kerja yang berbeda dapat berjalan dengan transisi yang mulus.*

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 const SiswaSoal = () => {
+  const wsRef = React.useRef(null);
   const [activeSessions, setActiveSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -12,7 +13,7 @@ const SiswaSoal = () => {
   const [soalList, setSoalList] = useState([]);
   const [isLoadingSoal, setIsLoadingSoal] = useState(false);
 
-  // Form States (Local Mockup for now)
+  // Form States
   const [teoriAnswers, setTeoriAnswers] = useState({});
   const [praktikumAnswers, setPraktikumAnswers] = useState({});
   const [analisisText, setAnalisisText] = useState('');
@@ -38,19 +39,59 @@ const SiswaSoal = () => {
     }, 3000);
   };
 
+  // WebSocket Setup
   useEffect(() => {
-    let interval;
-    const isAnySimulating = Object.values(isSimulating).some(val => val === true);
-    if (isAnySimulating) {
-      interval = setInterval(() => {
-        const randomSuhu = (30 + Math.random() * 5).toFixed(1);
-        setSuhuSensor(randomSuhu);
-      }, 2000);
-    } else {
-      setSuhuSensor('--');
-    }
-    return () => clearInterval(interval);
-  }, [isSimulating]);
+    const wsUrl = API_URL.replace('http', 'ws').replace('/api', '');
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket Connected to Backend');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.topic === 'ohm/sensor/status') {
+          setIsIotConnected(data.payload === 'online');
+        } else if (data.topic === 'ohm/sensor/data') {
+          const sensorData = JSON.parse(data.payload);
+          setSuhuSensor(sensorData.suhu);
+          
+          setIsSimulating(prevSims => {
+            let hasChanges = false;
+            setPraktikumAnswers(prevAns => {
+              const newAns = { ...prevAns };
+              Object.keys(prevSims).forEach(id_soal => {
+                if (prevSims[id_soal]) {
+                  newAns[id_soal] = {
+                    volt: sensorData.tegangan,
+                    ampere: sensorData.arus
+                  };
+                  hasChanges = true;
+                }
+              });
+              return hasChanges ? newAns : prevAns;
+            });
+            return prevSims;
+          });
+        }
+      } catch (err) {
+        console.error('WS parse error:', err);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket Disconnected');
+      setIsIotConnected(false);
+    };
+
+    return () => {
+      if (ws.readyState === 1) {
+        ws.close();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -148,21 +189,30 @@ const SiswaSoal = () => {
     });
   };
 
-  // Mock IoT toggle
-  const toggleIot = () => {
-    setIsIotConnected(!isIotConnected);
-    // If disconnected, stop all simulations
-    if (isIotConnected) {
-      setIsSimulating({});
+  // Handle Ohm Change
+  const handleOhmChange = (id_soal, value) => {
+    setSelectedOhmESP({...selectedOhmESP, [id_soal]: value});
+    if (wsRef.current && wsRef.current.readyState === 1 && isIotConnected) {
+      wsRef.current.send(JSON.stringify({ action: 'set_resistor', value }));
+    } else if (!isIotConnected) {
+      showToast("Hubungkan ke IoT Broker terlebih dahulu!", "warning");
     }
   };
 
   // Mock Start/Stop Praktikum per question
   const toggleSimulasi = (id_soal) => {
     if (!isIotConnected) {
-      showToast("Hubungkan ke IoT Broker terlebih dahulu!", "warning");
+      showToast("ESP32 Offline! Pastikan alat menyala dan terhubung WiFi.", "warning");
       return;
     }
+    
+    // If starting, send the current dropdown value to ESP
+    if (!isSimulating[id_soal] && selectedOhmESP[id_soal]) {
+       if (wsRef.current && wsRef.current.readyState === 1) {
+         wsRef.current.send(JSON.stringify({ action: 'set_resistor', value: selectedOhmESP[id_soal] }));
+       }
+    }
+
     setIsSimulating(prev => ({
       ...prev,
       [id_soal]: !prev[id_soal]
@@ -498,7 +548,7 @@ const SiswaSoal = () => {
                             className="form-input" 
                             style={{ padding: '6px 24px 6px 10px', fontSize: '12px', height: 'auto', backgroundPosition: 'right 6px center', width: 'auto' }}
                             value={selectedOhmESP[item.id_soal] || ''}
-                            onChange={(e) => setSelectedOhmESP({...selectedOhmESP, [item.id_soal]: e.target.value})}
+                            onChange={(e) => handleOhmChange(item.id_soal, e.target.value)}
                             disabled={simulating}
                           >
                             <option value="220">220 Ω</option>

@@ -4,6 +4,8 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
+const mqtt = require('mqtt');
+const { WebSocketServer } = require('ws');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -1216,12 +1218,63 @@ app.get('/', (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-// Trigger Railway Deploy 1
+// ============================================================================
+// IOT INTEGRATION: MQTT (HiveMQ) & WebSocket Server
+// ============================================================================
 
-app.get('/api/testdeploy', (req, res) => res.send('Deploy success 2!'));
+// 1. Setup MQTT Client
+const mqttClient = mqtt.connect('mqtts://56986984f5814ef7b08f5ea28d208c41.s1.eu.hivemq.cloud:8883', {
+  username: 'sys.ohm.law',
+  password: 'System.Ohm.Laws--00'
+});
 
-// Push Ulang 3
+mqttClient.on('connect', () => {
+  console.log('Connected to HiveMQ Cloud via MQTT TLS');
+  // Subscribe to sensor data and status
+  mqttClient.subscribe('ohm/sensor/data');
+  mqttClient.subscribe('ohm/sensor/status');
+});
+
+mqttClient.on('error', (err) => {
+  console.error('MQTT Connection Error:', err);
+});
+
+// 2. Setup WebSocket Server on the same HTTP server
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws) => {
+  console.log('New WebSocket Client Connected');
+
+  // Handle messages from Frontend (Siswa)
+  ws.on('message', (message) => {
+    try {
+      const parsed = JSON.parse(message);
+      // Example: { action: 'set_resistor', value: '330' }
+      if (parsed.action === 'set_resistor' && parsed.value) {
+        console.log(`Sending control command to ESP: Set Resistor to ${parsed.value} ohm`);
+        mqttClient.publish('ohm/control/resistor', parsed.value.toString());
+      }
+    } catch (e) {
+      console.error('Invalid WS message:', message.toString());
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('WebSocket Client Disconnected');
+  });
+});
+
+// 3. Bridge MQTT messages to WebSockets
+mqttClient.on('message', (topic, message) => {
+  const payload = message.toString();
+  // Broadcast to all active WebSocket clients
+  wss.clients.forEach((client) => {
+    if (client.readyState === 1) { // WebSocket.OPEN
+      client.send(JSON.stringify({ topic, payload }));
+    }
+  });
+});
