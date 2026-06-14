@@ -41,9 +41,17 @@ const SiswaSoal = () => {
 
   // WebSocket Setup
   useEffect(() => {
-    const wsUrl = API_URL.replace('http', 'ws').replace('/api', '');
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    let wsUrl = API_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+    wsUrl = wsUrl.replace('/api', '');
+    
+    let ws;
+    try {
+      ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+    } catch (e) {
+      console.error("Failed to construct WebSocket:", e);
+      return;
+    }
 
     ws.onopen = () => {
       console.log('WebSocket Connected to Backend');
