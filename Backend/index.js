@@ -171,6 +171,116 @@ app.get('/api/me', authenticateToken, (req, res) => {
   return res.status(200).json({ user: req.user });
 });
 
+// REST API - Update Profile Guru/Siswa
+app.put('/api/profile', authenticateToken, async (req, res) => {
+  const { nama, password_lama, password_baru } = req.body;
+  const { id, role } = req.user;
+
+  if (!['guru', 'siswa'].includes(role)) {
+    return res.status(403).json({
+      message: 'Hanya guru dan siswa yang dapat mengubah profil.'
+    });
+  }
+
+  if (!nama || nama.trim() === '') {
+    return res.status(400).json({
+      message: 'Nama wajib diisi.'
+    });
+  }
+
+  try {
+    const tableName = role === 'guru' ? 'guru' : 'siswa';
+    const idColumn = role === 'guru' ? 'id_guru' : 'id_siswa';
+    const nameColumn = role === 'guru' ? 'nama_guru' : 'nama_siswa';
+    const identifierColumn = role === 'guru' ? 'nip' : 'nim';
+
+    const { data: currentUser, error: fetchError } = await supabase
+      .from(tableName)
+      .select(`${idColumn}, ${identifierColumn}, ${nameColumn}, password`)
+      .eq(idColumn, id)
+      .single();
+
+    if (fetchError || !currentUser) {
+      return res.status(404).json({
+        message: 'Data pengguna tidak ditemukan.'
+      });
+    }
+
+    const updateData = {
+      [nameColumn]: nama.trim()
+    };
+
+    if (password_baru && password_baru.trim() !== '') {
+      if (!password_lama || password_lama.trim() === '') {
+        return res.status(400).json({
+          message: 'Password lama wajib diisi jika ingin mengganti password.'
+        });
+      }
+
+      const isOldPasswordValid = await verifyPassword(
+        password_lama,
+        currentUser.password
+      );
+
+      if (!isOldPasswordValid) {
+        return res.status(400).json({
+          message: 'Password lama tidak sesuai.'
+        });
+      }
+
+      if (password_baru.trim().length < 6) {
+        return res.status(400).json({
+          message: 'Password baru minimal 6 karakter.'
+        });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password_baru.trim(), salt);
+    }
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from(tableName)
+      .update(updateData)
+      .eq(idColumn, id)
+      .select(`${idColumn}, ${identifierColumn}, ${nameColumn}`)
+      .single();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    const updatedName = updatedUser[nameColumn];
+    const identifier = updatedUser[identifierColumn];
+
+    const newToken = jwt.sign(
+      {
+        id,
+        role,
+        username: identifier,
+        name: updatedName
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    return res.status(200).json({
+      message: 'Profil berhasil diperbarui.',
+      token: newToken,
+      user: {
+        id,
+        role,
+        username: identifier,
+        name: updatedName
+      }
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return res.status(500).json({
+      message: 'Terjadi kesalahan saat memperbarui profil.'
+    });
+  }
+});
+
 // --- CRUD GURU ---
 
 // GET All Guru
