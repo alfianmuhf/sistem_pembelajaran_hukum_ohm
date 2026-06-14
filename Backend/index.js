@@ -869,7 +869,25 @@ app.get('/api/kuis/aktif', authenticateToken, async (req, res) => {
       return res.json([]); // No active session
     }
 
-    res.json(sesiData);
+    // Filter remidi sessions: only include if the student has 'soal' for that remidi session
+    const validSesiData = [];
+    for (const sesi of sesiData) {
+      if (sesi.tipe?.toLowerCase() === 'remidi') {
+        const { data: soalData } = await supabase
+          .from('soal')
+          .select('id_soal')
+          .eq('id_sesi', sesi.id_sesi)
+          .eq('id_siswa', req.user.id)
+          .limit(1);
+        if (soalData && soalData.length > 0) {
+          validSesiData.push(sesi);
+        }
+      } else {
+        validSesiData.push(sesi);
+      }
+    }
+
+    res.json(validSesiData);
   } catch (error) {
     console.error('Error fetching kuis aktif:', error);
     res.status(500).json({ message: 'Terjadi kesalahan saat mengambil daftar kuis.' });

@@ -43,10 +43,12 @@ Hingga saat ini, sistem telah menyelesaikan pondasi awal untuk panel Administrat
   - Setiap Sesi Utama dibuat oleh guru, backend akan otomatis membuat 4 soal berurutan (dengan Ohm: 220, 330, 470, 680) untuk *setiap siswa* di kelas tersebut. Voltase diacak dari 3 hingga 11 Volt.
 - **Halaman Daftar Kuis Aktif**:
   - Validasi *Tenggang Waktu* secara akurat dengan sinkronisasi zona waktu (WIB / Asia/Jakarta) antara *database* dengan pengecekan waktu di *server backend*.
+  - **Filter Partisipan Remidi**: Sesi remidi yang sedang berjalan hanya akan muncul (terlihat) di daftar kuis *eksklusif* bagi siswa yang memang menjadi peserta remidi (siswa yang nilainya < 71 di sesi utamanya). Siswa yang tidak remidi tidak akan melihat sesi tersebut meskipun tenggang waktunya masih aktif.
   - Menampilkan sesi yang masih berjalan dalam bentuk kotak (Card) berisi informasi: Tipe Sesi, Tanggal Dibuat, dan Tenggang Waktu (Tutup). Sesi yang sudah melewati batas waktu akan otomatis hilang.
 - **Halaman Pengerjaan Soal (Split-Screen)**:
   - **Kiri (Teori)**: Menampilkan 4 kotak soal perhitungan arus (Ampere) beserta input jawaban dan tombol "Simpan Jawaban" per nomor.
-  - **Kanan (Praktikum IoT)**: Menampilkan 4 kotak soal pembacaan aktual sensor, lengkap dengan tombol "Start/Stop Praktikum" per nomor, dan tombol simpan data. Dilengkapi *Dropdown Selector* Ohm (220, 330, 470, 680) untuk mengatur status ESP secara spesifik per soal. Tombol simpan pada bagian ini dikunci (disabled) jika koneksi IoT terputus.
+  - **Kanan (Praktikum IoT)**: Menampilkan 4 kotak soal pembacaan aktual sensor, lengkap dengan tombol "Start/Stop Praktikum" per nomor, dan tombol simpan data. Dilengkapi *Dropdown Selector* Ohm (220, 330, 470, 680) untuk mengatur status ESP secara spesifik per soal. 
+  - **Monitoring Sensor Suhu Real-time**: Pada area pengisian praktikum (sebelah tombol Simpan), ditambahkan indikator pembacaan Sensor Suhu Praktikum (dalam °C) yang secara langsung melakukan simulasi pembaruan angka tiap beberapa detik ketika mode "Start Praktikum" sedang aktif/dinyalakan. Tombol simpan pada bagian ini dikunci (disabled) jika koneksi IoT terputus atau mode pembacaan praktikum belum dijalankan.
   - **Bawah (Analisis)**: Area *textarea* untuk mengetik laporan praktikum dan kesimpulan.
 - **Sistem Penyimpanan Terintegrasi (Upsert)**:
   - Seluruh fitur penyimpanan (Teori, Praktikum, Analisis) mendukung penyimpanan berulang. Sistem akan secara otomatis memperbarui (*update*) jawaban sebelumnya jika sudah pernah disimpan, tanpa menduplikasi data.

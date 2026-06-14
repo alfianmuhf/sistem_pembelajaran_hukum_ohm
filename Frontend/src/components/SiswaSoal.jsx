@@ -21,6 +21,7 @@ const SiswaSoal = () => {
   // IoT Simulation States
   const [isIotConnected, setIsIotConnected] = useState(false);
   const [isSimulating, setIsSimulating] = useState({}); // { [id_soal]: boolean }
+  const [suhuSensor, setSuhuSensor] = useState('--');
   
   // Saving states
   const [isSavingTeori, setIsSavingTeori] = useState({});
@@ -36,6 +37,20 @@ const SiswaSoal = () => {
       setToast(prev => ({ ...prev, show: false }));
     }, 3000);
   };
+
+  useEffect(() => {
+    let interval;
+    const isAnySimulating = Object.values(isSimulating).some(val => val === true);
+    if (isAnySimulating) {
+      interval = setInterval(() => {
+        const randomSuhu = (30 + Math.random() * 5).toFixed(1);
+        setSuhuSensor(randomSuhu);
+      }, 2000);
+    } else {
+      setSuhuSensor('--');
+    }
+    return () => clearInterval(interval);
+  }, [isSimulating]);
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -534,7 +549,15 @@ const SiswaSoal = () => {
                         </div>
                       </div>
                       
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning-dark)" strokeWidth="2">
+                            <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                          </svg>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
+                            Suhu Praktikum: <span style={{ color: 'var(--primary)' }}>{simulating ? suhuSensor : '--'} °C</span>
+                          </span>
+                        </div>
                         <button 
                           className="btn-primary" 
                           onClick={() => handleSavePraktikum(item.id_soal)}
