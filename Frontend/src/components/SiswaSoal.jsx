@@ -22,6 +22,7 @@ const SiswaSoal = () => {
   // IoT Simulation States
   const [isIotConnected, setIsIotConnected] = useState(false);
   const [isSimulating, setIsSimulating] = useState({}); // { [id_soal]: boolean }
+  const isSimulatingRef = React.useRef({});
   const [suhuSensor, setSuhuSensor] = useState('--');
   
   // Saving states
@@ -66,22 +67,21 @@ const SiswaSoal = () => {
           const sensorData = JSON.parse(data.payload);
           setSuhuSensor(sensorData.suhu);
           
-          setIsSimulating(prevSims => {
+          setPraktikumAnswers(prevAns => {
             let hasChanges = false;
-            setPraktikumAnswers(prevAns => {
-              const newAns = { ...prevAns };
-              Object.keys(prevSims).forEach(id_soal => {
-                if (prevSims[id_soal]) {
-                  newAns[id_soal] = {
-                    volt: sensorData.tegangan,
-                    ampere: sensorData.arus
-                  };
-                  hasChanges = true;
-                }
-              });
-              return hasChanges ? newAns : prevAns;
+            const newAns = { ...prevAns };
+            const currentSims = isSimulatingRef.current;
+            
+            Object.keys(currentSims).forEach(id_soal => {
+              if (currentSims[id_soal]) {
+                newAns[id_soal] = {
+                  volt: sensorData.tegangan,
+                  ampere: sensorData.arus
+                };
+                hasChanges = true;
+              }
             });
-            return prevSims;
+            return hasChanges ? newAns : prevAns;
           });
         }
       } catch (err) {
@@ -165,6 +165,7 @@ const SiswaSoal = () => {
         setSelectedOhmESP(initialOhm);
         setAnalisisText(jawabanData.analisis?.analisis_siswa || '');
         setIsSimulating({});
+        isSimulatingRef.current = {};
       }
     } catch (err) {
       alert('Gagal memuat soal untuk sesi ini.');
@@ -221,10 +222,11 @@ const SiswaSoal = () => {
        }
     }
 
-    setIsSimulating(prev => ({
-      ...prev,
-      [id_soal]: !prev[id_soal]
-    }));
+    setIsSimulating(prev => {
+      const updated = { ...prev, [id_soal]: !prev[id_soal] };
+      isSimulatingRef.current = updated;
+      return updated;
+    });
   };
 
   // API Save Handlers
