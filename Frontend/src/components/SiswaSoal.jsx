@@ -42,11 +42,18 @@ const SiswaSoal = () => {
 
   // WebSocket Setup
   useEffect(() => {
-    let wsUrl = API_URL.replace('https://', 'wss://').replace('http://', 'ws://');
-    wsUrl = wsUrl.replace('/api', '');
-    
     let ws;
     try {
+      let wsUrl = API_URL;
+      if (wsUrl.startsWith('http://')) {
+        wsUrl = wsUrl.replace('http://', 'ws://');
+      } else if (wsUrl.startsWith('https://')) {
+        wsUrl = wsUrl.replace('https://', 'wss://');
+      } else if (!wsUrl.startsWith('ws://') && !wsUrl.startsWith('wss://')) {
+        wsUrl = 'wss://' + wsUrl; // fallback
+      }
+      wsUrl = wsUrl.replace('/api', '');
+
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
     } catch (e) {
