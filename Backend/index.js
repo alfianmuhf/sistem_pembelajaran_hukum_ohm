@@ -1271,9 +1271,7 @@ app.get('/api/guru/dashboard', authenticateToken, async (req, res) => {
     return res.json({
       kelas_diampu: kelasData.length,
       sesi_berjalan: sesiBerjalan.length,
-      siswa_belum_dapat_nilai: siswaBelumDinilai,
-      siswa_sudah_dinilai: siswaSudahDinilai
-
+      siswa_belum_dapat_nilai: siswaBelumDinilai
     });
   } catch (error) {
     console.error('Error fetching guru dashboard:', error);
