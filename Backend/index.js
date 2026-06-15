@@ -1230,15 +1230,15 @@ app.get('/api/guru/dashboard', authenticateToken, async (req, res) => {
     if (siswaError) throw siswaError;
 
     const siswa = siswaData || [];
-    const sesiSelesaiIds = sesiSelesai.map((item) => item.id_sesi);
+    const sesiIds = sesi.map((item) => item.id_sesi);
 
     let nilaiData = [];
 
-    if (sesiSelesaiIds.length > 0) {
+    if (sesiIds.length > 0) {
       const { data: nilai, error: nilaiError } = await supabase
         .from('nilai_siswa')
         .select('id_sesi, id_siswa, nilai_total')
-        .in('id_sesi', sesiSelesaiIds);
+        .in('id_sesi', sesiIds);
 
       if (nilaiError) throw nilaiError;
 
