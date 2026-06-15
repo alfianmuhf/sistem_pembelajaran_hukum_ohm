@@ -38,7 +38,6 @@ function App() {
   const [guruKelasDiampuCount, setGuruKelasDiampuCount] = useState(0)
   const [guruSesiBerjalanCount, setGuruSesiBerjalanCount] = useState(0)
   const [guruBelumDinilaiCount, setGuruBelumDinilaiCount] = useState(0)
-  const [guruSudahDinilaiCount, setGuruSudahDinilaiCount] = useState(0)
 
   // Siswa Dashboard Stats
   const [siswaActiveSesiCount, setSiswaActiveSesiCount] = useState(0)
@@ -141,7 +140,6 @@ function App() {
           setGuruKelasDiampuCount(data.kelas_diampu || 0)
           setGuruSesiBerjalanCount(data.sesi_berjalan || 0)
           setGuruBelumDinilaiCount(data.siswa_belum_dapat_nilai || 0)
-          setGuruSudahDinilaiCount(data.siswa_sudah_dinilai || 0)
         } catch (err) {
           console.error('Failed to fetch guru dashboard stats:', err)
         }
@@ -436,9 +434,6 @@ function App() {
                 <div className="stat-card-details">
                   <span className="stat-card-title">Perlu Dinilai</span>
                   <span className="stat-card-number">{guruBelumDinilaiCount}</span>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px', fontSize: '13px', fontWeight: 600 }}>
-                    <span style={{ color: 'var(--success)' }}>{guruSudahDinilaiCount} Sudah Dinilai</span>
-                  </div>
                 </div>
                 <div className="stat-card-icon">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
