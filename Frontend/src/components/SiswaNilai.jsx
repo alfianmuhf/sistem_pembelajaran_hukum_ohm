@@ -59,10 +59,13 @@ export default function SiswaNilai() {
   };
 
   const renderStatus = (nilai) => {
-    if (nilai && nilai.nilai_total !== null && nilai.nilai_total !== undefined) {
-      return <span className="status-badge success">Sudah Dinilai</span>;
-    }
-    return <span className="status-badge danger">Belum Dinilai</span>;
+    const isDinilai = nilai && nilai.nilai_total !== null && nilai.nilai_total !== undefined;
+    return (
+      <div className={`status-badge ${isDinilai ? 'status-active' : 'status-inactive'}`}>
+        <span className="status-dot"></span>
+        {isDinilai ? 'Sudah Dinilai' : 'Belum Dinilai'}
+      </div>
+    );
   };
 
   const formatDate = (dateStr) => {
@@ -79,14 +82,14 @@ export default function SiswaNilai() {
         <p>Pantau rekapitulasi nilai kuis teori, nilai ketepatan praktikum IoT, nilai analisis, dan umpan balik dari guru pengampu.</p>
       </div>
 
-      <div className="card">
+      <div className="data-card">
         {error && <div className="alert-error">{error}</div>}
         
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-light)' }}>Memuat data nilai...</div>
         ) : (
           <div className="table-responsive">
-            <table className="admin-table">
+            <table className="custom-table">
               <thead>
                 <tr>
                   <th>Sesi</th>
@@ -102,33 +105,43 @@ export default function SiswaNilai() {
               <tbody>
                 {sesiList.length === 0 ? (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '30px' }}>Belum ada data nilai / Anda belum mengerjakan kuis.</td>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-light)' }}>Belum ada data nilai / Anda belum mengerjakan kuis.</td>
                   </tr>
                 ) : (
                   sesiList.map(sesi => (
                     <tr key={sesi.id_sesi}>
                       <td>
-                        <strong>Sesi {sesi.sesi}</strong>
+                        <strong style={{ color: 'var(--text-main)' }}>Sesi {sesi.sesi}</strong>
                         {sesi.tipe?.toLowerCase() === 'remidi' && (
-                          <span style={{ marginLeft: '8px', fontSize: '12px', padding: '2px 6px', background: '#fee2e2', color: '#ef4444', borderRadius: '4px' }}>Remidi</span>
+                          <span style={{ marginLeft: '8px', fontSize: '11px', padding: '3px 8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderRadius: '12px', fontWeight: 600 }}>Remidi</span>
                         )}
                       </td>
-                      <td>{formatDate(sesi.tanggal_pembuatan)}</td>
-                      <td>{sesi.nilai?.nilai_soal ?? '-'}</td>
-                      <td>{sesi.nilai?.nilai_praktikum ?? '-'}</td>
-                      <td>{sesi.nilai?.nilai_analisis ?? '-'}</td>
+                      <td style={{ color: 'var(--text-medium)' }}>{formatDate(sesi.tanggal_pembuatan)}</td>
+                      <td style={{ fontWeight: 600 }}>{sesi.nilai?.nilai_soal ?? '-'}</td>
+                      <td style={{ fontWeight: 600 }}>{sesi.nilai?.nilai_praktikum ?? '-'}</td>
+                      <td style={{ fontWeight: 600 }}>{sesi.nilai?.nilai_analisis ?? '-'}</td>
                       <td>
                         {sesi.nilai?.nilai_total !== undefined && sesi.nilai?.nilai_total !== null ? (
-                           <strong style={{ color: sesi.nilai.nilai_total >= 71 ? 'var(--primary)' : 'var(--danger)' }}>
+                           <span style={{ fontWeight: 700, color: sesi.nilai.nilai_total >= 71 ? 'var(--success)' : 'var(--danger)' }}>
                              {sesi.nilai.nilai_total}
-                           </strong>
-                        ) : '-'}
+                           </span>
+                        ) : <span style={{ color: 'var(--text-light)' }}>-</span>}
                       </td>
                       <td>{renderStatus(sesi.nilai)}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        <button className="btn-secondary" onClick={() => openDetail(sesi)} style={{ padding: '6px 12px', fontSize: '13px' }}>
-                          Lihat Detail Soal
-                        </button>
+                      <td>
+                        <div className="action-buttons" style={{ justifyContent: 'center' }}>
+                          <button 
+                            className="btn-icon" 
+                            title="Lihat Detail Soal" 
+                            onClick={() => openDetail(sesi)}
+                            style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
