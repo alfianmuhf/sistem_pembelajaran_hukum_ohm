@@ -35,6 +35,12 @@ function App() {
   const [guruInactiveCount, setGuruInactiveCount] = useState(0)
   const [kelasCount, setKelasCount] = useState(0)
 
+  // Siswa Dashboard Stats
+  const [siswaActiveSesiCount, setSiswaActiveSesiCount] = useState(0)
+  const [siswaTotalNilaiCount, setSiswaTotalNilaiCount] = useState(0)
+  const [siswaLulusCount, setSiswaLulusCount] = useState(0)
+  const [siswaRemidiCount, setSiswaRemidiCount] = useState(0)
+
   // User Profile states
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -107,6 +113,36 @@ function App() {
         }
       };
       fetchStats();
+    }
+  }, [isLoggedIn, userRole, activeMenu, token]);
+
+  // Fetch Siswa Dashboard Stats
+  useEffect(() => {
+    if (isLoggedIn && userRole === 'siswa' && activeMenu === 'dashboard') {
+      const fetchSiswaStats = async () => {
+        try {
+          const headers = { 'Authorization': `Bearer ${token}` };
+          const [aktifRes, nilaiRes] = await Promise.all([
+            fetch(`${API_URL}/kuis/aktif`, { headers }),
+            fetch(`${API_URL}/siswa/nilai`, { headers })
+          ]);
+          
+          if (aktifRes.ok) {
+            const data = await aktifRes.json();
+            setSiswaActiveSesiCount(data.length);
+          }
+          if (nilaiRes.ok) {
+            const data = await nilaiRes.json();
+            const graded = data.filter(s => s.nilai && s.nilai.nilai_total !== null && s.nilai.nilai_total !== undefined);
+            setSiswaTotalNilaiCount(graded.length);
+            setSiswaLulusCount(graded.filter(s => s.nilai.nilai_total >= 71).length);
+            setSiswaRemidiCount(graded.filter(s => s.nilai.nilai_total < 71).length);
+          }
+        } catch (err) {
+          console.error('Failed to fetch siswa stats:', err);
+        }
+      };
+      fetchSiswaStats();
     }
   }, [isLoggedIn, userRole, activeMenu, token]);
 
@@ -400,6 +436,39 @@ function App() {
               <p className="welcome-desc">
                 Portal Praktikum Mandiri Siswa. Pelajari materi Hukum Ohm, kerjakan soal kuis, dan kalibrasi nilai Ohm, Volt, serta Ampere menggunakan alat IoT praktikum fisik.
               </p>
+            </div>
+
+            {/* Quick stats for siswa */}
+            <div className="stats-grid" style={{ marginBottom: '24px' }}>
+              <div className="stat-card stat-card-murid" onClick={() => setActiveMenu('soal')} style={{ cursor: 'pointer' }}>
+                <div className="stat-card-details">
+                  <span className="stat-card-title">Kuis Aktif (Berjalan)</span>
+                  <span className="stat-card-number">{siswaActiveSesiCount}</span>
+                </div>
+                <div className="stat-card-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="stat-card stat-card-guru" onClick={() => setActiveMenu('nilai')} style={{ cursor: 'pointer' }}>
+                <div className="stat-card-details">
+                  <span className="stat-card-title">Total Penilaian Selesai</span>
+                  <span className="stat-card-number">{siswaTotalNilaiCount}</span>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px', fontSize: '13px', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--success)' }}>{siswaLulusCount} Lulus (≥71)</span>
+                    <span style={{ color: 'var(--danger)' }}>{siswaRemidiCount} Remidi</span>
+                  </div>
+                </div>
+                <div className="stat-card-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             <div style={{
