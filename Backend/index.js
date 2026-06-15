@@ -1245,33 +1245,24 @@ app.get('/api/guru/dashboard', authenticateToken, async (req, res) => {
       nilaiData = nilai || [];
     }
 
-    // 4. Hitung siswa yang belum mendapat nilai berdasarkan nilai_total
-    const nilaiKeys = new Set(
-      nilaiData
-        .filter((nilai) => nilai.nilai_total !== null && nilai.nilai_total !== undefined)
-        .map((nilai) => `${nilai.id_sesi}-${nilai.id_siswa}`)
-    );
+    // 4. Hitung siswa yang sudah dinilai dan belum dinilai (dari yang sudah mengumpulkan)
+    let siswaSudahDinilai = 0;
+    let siswaBelumDinilai = 0;
 
-    let siswaBelumDapatNilai = 0;
-
-    sesiSelesai.forEach((sesiItem) => {
-      const siswaDalamKelas = siswa.filter(
-        (siswaItem) => siswaItem.id_kelas === sesiItem.id_kelas
-      );
-
-      siswaDalamKelas.forEach((siswaItem) => {
-        const key = `${sesiItem.id_sesi}-${siswaItem.id_siswa}`;
-
-        if (!nilaiKeys.has(key)) {
-          siswaBelumDapatNilai += 1;
-        }
-      });
+    nilaiData.forEach((nilai) => {
+      if (nilai.nilai_total !== null && nilai.nilai_total !== undefined) {
+        siswaSudahDinilai += 1;
+      } else {
+        siswaBelumDinilai += 1;
+      }
     });
 
     return res.json({
       kelas_diampu: kelasData.length,
       sesi_berjalan: sesiBerjalan.length,
-      siswa_belum_dapat_nilai: siswaBelumDapatNilai
+      siswa_belum_dapat_nilai: siswaBelumDinilai,
+      siswa_sudah_dinilai: siswaSudahDinilai
+
     });
   } catch (error) {
     console.error('Error fetching guru dashboard:', error);
