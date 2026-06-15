@@ -1322,6 +1322,83 @@ app.post('/api/penilaian/simpan', authenticateToken, async (req, res) => {
   }
 });
 
+// GET Rekap Nilai untuk Siswa
+app.get('/api/siswa/nilai', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'siswa') return res.status(403).json({ message: 'Akses ditolak.' });
+  try {
+    const { data: soalData, error: soalErr } = await supabase
+      .from('soal')
+      .select('id_sesi')
+      .eq('id_siswa', req.user.id);
+
+    if (soalErr) throw soalErr;
+
+    if (!soalData || soalData.length === 0) {
+      return res.json([]);
+    }
+
+    const sesiIds = [...new Set(soalData.map(s => s.id_sesi))];
+
+    const { data: sesiData, error: sesiErr } = await supabase
+      .from('sesi')
+      .select('*')
+      .in('id_sesi', sesiIds)
+      .order('id_sesi', { ascending: false });
+
+    if (sesiErr) throw sesiErr;
+
+    const { data: nilaiData, error: nilaiErr } = await supabase
+      .from('nilai_siswa')
+      .select('*')
+      .eq('id_siswa', req.user.id)
+      .in('id_sesi', sesiIds);
+
+    if (nilaiErr) throw nilaiErr;
+
+    const result = sesiData.map(sesi => {
+      const nilai = nilaiData.find(n => n.id_sesi === sesi.id_sesi) || null;
+      return {
+        ...sesi,
+        nilai: nilai
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching nilai siswa:', error);
+    res.status(500).json({ message: 'Gagal mengambil data nilai.' });
+  }
+});
+
+// GET Detail Nilai dan Jawaban Siswa
+app.get('/api/siswa/nilai/:id_sesi', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'siswa') return res.status(403).json({ message: 'Akses ditolak.' });
+  const { id_sesi } = req.params;
+
+  try {
+    const { data: soalData } = await supabase.from('soal').select('*').eq('id_sesi', id_sesi).eq('id_siswa', req.user.id).order('id_soal', { ascending: true });
+    const soalIds = soalData ? soalData.map(s => s.id_soal) : [];
+
+    let teori = [];
+    let praktikum = [];
+    
+    if (soalIds.length > 0) {
+      const { data: tData } = await supabase.from('jawaban_soal_siswa').select('*').in('id_soal', soalIds);
+      teori = tData || [];
+      const { data: pData } = await supabase.from('jawaban_praktikum_siswa').select('*').in('id_soal', soalIds);
+      praktikum = pData || [];
+    }
+
+    const { data: analisis } = await supabase.from('jawaban_analisis_siswa').select('*').eq('id_sesi', id_sesi).eq('id_siswa', req.user.id).maybeSingle();
+    const { data: nilai } = await supabase.from('nilai_siswa').select('*').eq('id_sesi', id_sesi).eq('id_siswa', req.user.id).maybeSingle();
+
+    res.json({ soal: soalData, teori, praktikum, analisis, nilai });
+  } catch (error) {
+    console.error('Error fetching detail nilai siswa:', error);
+    res.status(500).json({ message: 'Gagal mengambil detail nilai.' });
+  }
+});
+
 // Root check endpoint
 app.get('/', (req, res) => {
   res.send('Backend API Smart Learning OHM is running.');
