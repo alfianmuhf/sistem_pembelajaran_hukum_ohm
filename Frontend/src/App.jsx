@@ -6,6 +6,7 @@ import SiswaAdmin from './components/SiswaAdmin'
 import SesiGuru from './components/SesiGuru'
 import SiswaSoal from './components/SiswaSoal'
 import PenilaianGuru from './components/PenilaianGuru'
+import SiswaNilai from './components/SiswaNilai'
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 function App() {
@@ -363,21 +364,7 @@ function App() {
         return <SiswaSoal />;
 
       case 'nilai':
-        return (
-          <>
-            <div className="page-header">
-              <h2>Laporan Nilai Anda</h2>
-              <p>Pantau rekapitulasi nilai kuis teori, nilai ketepatan praktikum IoT, nilai analisis, dan umpan balik dari guru pengampu.</p>
-            </div>
-            <div className="placeholder-card">
-              <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              <h3>Halaman Nilai Siswa</h3>
-              <p>Visualisasi grafik nilai kuis dan nilai praktikum IoT Anda akan ditampilkan di sini setelah pengerjaan dinilai oleh Guru.</p>
-            </div>
-          </>
-        )
+        return <SiswaNilai />;
 
       default:
         return <div>Halaman tidak ditemukan.</div>
