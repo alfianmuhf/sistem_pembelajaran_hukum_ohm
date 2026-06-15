@@ -1015,3 +1015,352 @@ body {
   color: var(--text-muted);
   cursor: not-allowed;
 }
+
+/* =========================
+   Materi Siswa - Hukum Ohm
+========================= */
+
+.materi-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeIn 0.35s ease;
+}
+
+.materi-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  align-items: center;
+  padding: 32px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.22), transparent 32%),
+    linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.materi-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #dbeafe;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.materi-hero h2 {
+  margin: 0 0 12px;
+  font-size: 34px;
+  letter-spacing: -0.04em;
+}
+
+.materi-hero p {
+  margin: 0;
+  max-width: 620px;
+  color: #dbeafe;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.ohm-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.battery-icon,
+.resistor-icon,
+.lamp-icon {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.resistor-icon {
+  color: #facc15;
+}
+
+.wire-line {
+  width: 64px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #60a5fa, #facc15);
+}
+
+.materi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.materi-grid.three-columns {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.materi-card,
+.formula-card,
+.formula-list,
+.summary-card {
+  padding: 24px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+}
+
+.materi-card h3,
+.formula-card h3,
+.formula-list h3,
+.summary-card h3 {
+  margin: 0 0 14px;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.materi-card p,
+.summary-card p,
+.formula-list p {
+  color: #475569;
+  line-height: 1.7;
+}
+
+.materi-card ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #475569;
+  line-height: 1.75;
+}
+
+.materi-card li {
+  margin-bottom: 8px;
+}
+
+.materi-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  background: #eff6ff;
+  font-size: 24px;
+}
+
+.materi-note {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-left: 4px solid #3b82f6;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.formula-section {
+  display: grid;
+  grid-template-columns: 1fr 220px 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.formula-card {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+}
+
+.formula-card h3,
+.formula-card p {
+  color: white;
+}
+
+.formula-main {
+  margin: 22px 0 10px;
+  padding: 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 42px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: -0.04em;
+}
+
+.triangle-formula {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px;
+  border-radius: 20px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+  text-align: center;
+  font-weight: 900;
+}
+
+.triangle-top {
+  padding-bottom: 16px;
+  border-bottom: 3px solid #92400e;
+  font-size: 46px;
+}
+
+.triangle-bottom {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 16px;
+  font-size: 38px;
+}
+
+.formula-chip {
+  display: inline-flex;
+  padding: 10px 14px;
+  margin: 0 8px 10px 0;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.formula-help {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.materi-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.materi-table th {
+  background: #0f172a;
+  color: white;
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 14px;
+}
+
+.materi-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  font-weight: 600;
+}
+
+.materi-table tr:last-child td {
+  border-bottom: none;
+}
+
+.example-section {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 20px;
+}
+
+.calculation-box {
+  margin: 18px 0;
+  padding: 22px;
+  border-radius: 18px;
+  background: #0f172a;
+  color: #facc15;
+  font-size: 26px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.value-list {
+  display: grid;
+  gap: 12px;
+}
+
+.value-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.value-list strong {
+  color: #0f172a;
+}
+
+.summary-card {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  background: linear-gradient(135deg, #ecfdf5, #eff6ff);
+}
+
+.summary-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 54px;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: white;
+  font-size: 28px;
+}
+
+@media (max-width: 1024px) {
+  .materi-hero,
+  .formula-section,
+  .example-section,
+  .materi-grid,
+  .materi-grid.three-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .ohm-illustration {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .materi-hero {
+    padding: 24px;
+  }
+
+  .materi-hero h2 {
+    font-size: 28px;
+  }
+
+  .battery-icon,
+  .resistor-icon,
+  .lamp-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 26px;
+  }
+
+  .wire-line {
+    width: 32px;
+  }
+
+  .formula-main {
+    font-size: 32px;
+  }
+}
