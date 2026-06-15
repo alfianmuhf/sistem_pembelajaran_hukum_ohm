@@ -1,6 +1,13 @@
 import React from 'react'
 
-function Sidebar({ activeMenu, setActiveMenu, role = 'admin', userName = 'Admin', onLogout }) {
+function Sidebar({
+  activeMenu,
+  setActiveMenu,
+  role = 'admin',
+  userName = 'Admin',
+  onLogout,
+  onOpenProfile
+}) {
   // Define menu items based on user role
   const getMenuItems = () => {
     switch (role) {
@@ -177,18 +184,55 @@ function Sidebar({ activeMenu, setActiveMenu, role = 'admin', userName = 'Admin'
 
       {/* Profile Section */}
       <div className="sidebar-profile">
-        <div className="profile-info">
-          <div className="profile-avatar">
-            {userName.charAt(0).toUpperCase()}
-          </div>
-          <div className="profile-details">
-            <h4 className="profile-name">{userName}</h4>
+        <button
+          type="button"
+          className={`profile-info profile-button ${
+            role === 'guru' || role === 'siswa' ? 'clickable' : ''
+          }`}
+          onClick={role === 'guru' || role === 'siswa' ? onOpenProfile : undefined}
+          title={role === 'guru' || role === 'siswa' ? 'Buka profil' : 'Profil'}
+        >
+          <span className="profile-avatar profile-avatar-empty">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 21a8 8 0 0 0-16 0" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </span>
+
+          <span className="profile-details">
+            <span className="profile-name">{userName}</span>
             <span className="profile-status">Online</span>
-          </div>
-        </div>
-        <button className="sidebar-logout-btn" onClick={onLogout} title="Keluar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className="sidebar-logout-btn"
+          onClick={onLogout}
+          title="Logout"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
         </button>
       </div>

@@ -974,3 +974,44 @@ body {
   justify-content: flex-end;
   gap: 12px;
 }
+
+.profile-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  border-radius: 12px;
+  transition: var(--transition-smooth);
+  cursor: default;
+}
+
+.profile-button.clickable {
+  cursor: pointer;
+  padding: 6px;
+  margin: -6px;
+}
+
+.profile-button.clickable:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.profile-avatar-empty {
+  background: #f1f5f9;
+  color: var(--text-muted);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.profile-avatar-empty svg {
+  width: 22px;
+  height: 22px;
+}
+
+.form-input.no-icon {
+  padding-left: 16px;
+}
+
+.form-input:disabled {
+  background: #f1f5f9;
+  color: var(--text-muted);
+  cursor: not-allowed;
+}

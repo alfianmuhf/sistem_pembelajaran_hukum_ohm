@@ -33,6 +33,16 @@ function App() {
   const [guruInactiveCount, setGuruInactiveCount] = useState(0)
   const [kelasCount, setKelasCount] = useState(0)
 
+  // User Profile states
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileForm, setProfileForm] = useState({
+    nama: '',
+    password_lama: '',
+    password_baru: ''
+  });
+
   // Verify token on load to support session persistence
   useEffect(() => {
     const verifySession = async () => {
@@ -152,6 +162,85 @@ function App() {
     setPassword('');
     setError('');
   }
+
+  const openProfileModal = () => {
+    if (userRole !== 'guru' && userRole !== 'siswa') return;
+
+    setProfileForm({
+      nama: displayName,
+      password_lama: '',
+      password_baru: ''
+    });
+
+    setProfileError('');
+    setIsProfileModalOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    if (isSavingProfile) return;
+
+    setIsProfileModalOpen(false);
+    setProfileError('');
+    setProfileForm({
+      nama: '',
+      password_lama: '',
+      password_baru: ''
+    });
+  };
+
+  const handleProfileChange = (e) => {
+    const { name, value } = e.target;
+
+    setProfileForm((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    setProfileError('');
+
+    if (!profileForm.nama.trim()) {
+      setProfileError('Nama wajib diisi.');
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const res = await fetch(`${API_URL}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          nama: profileForm.nama,
+          password_lama: profileForm.password_lama,
+          password_baru: profileForm.password_baru
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Gagal memperbarui profil.');
+      }
+
+      localStorage.setItem('ohm_session_token', data.token);
+      setToken(data.token);
+      setDisplayName(data.user.name);
+      setUsername(data.user.username);
+
+      closeProfileModal();
+      alert('Profil berhasil diperbarui.');
+    } catch (err) {
+      setProfileError(err.message || 'Terjadi kesalahan saat menyimpan profil.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // Render Admin Dashboard and Pages
   const renderAdminContent = () => {
@@ -581,12 +670,117 @@ function App() {
             role={userRole}
             userName={displayName}
             onLogout={handleLogout}
+            onOpenProfile={openProfileModal}
           />
 
           {/* Main Content Area */}
           <main className="main-content-area">
             {renderRoleContent()}
           </main>
+          
+          {isProfileModalOpen && (
+            <div
+              className="modal-overlay"
+              onClick={closeProfileModal}
+            >
+              <form
+                className="modal-content"
+                onClick={(e) => e.stopPropagation()}
+                onSubmit={handleProfileSubmit}
+              >
+                <div className="modal-header">
+                  <h3>Profil {userRole === 'guru' ? 'Guru' : 'Siswa'}</h3>
+
+                  <button
+                    type="button"
+                    className="modal-close"
+                    onClick={closeProfileModal}
+                    disabled={isSavingProfile}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="modal-body">
+                  {profileError && (
+                    <div className="alert-error">
+                      {profileError}
+                    </div>
+                  )}
+
+                  <div className="form-group">
+                    <label className="form-label">Nama</label>
+                    <input
+                      type="text"
+                      name="nama"
+                      className="form-input no-icon"
+                      value={profileForm.nama}
+                      onChange={handleProfileChange}
+                      disabled={isSavingProfile}
+                      placeholder="Masukkan nama"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">
+                      {userRole === 'guru' ? 'NIP' : 'NIM'}
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input no-icon"
+                      value={username}
+                      disabled
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Password Lama</label>
+                    <input
+                      type="password"
+                      name="password_lama"
+                      className="form-input no-icon"
+                      value={profileForm.password_lama}
+                      onChange={handleProfileChange}
+                      disabled={isSavingProfile}
+                      placeholder="Isi jika ingin mengganti password"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Password Baru</label>
+                    <input
+                      type="password"
+                      name="password_baru"
+                      className="form-input no-icon"
+                      value={profileForm.password_baru}
+                      onChange={handleProfileChange}
+                      disabled={isSavingProfile}
+                      placeholder="Minimal 6 karakter"
+                    />
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={closeProfileModal}
+                    disabled={isSavingProfile}
+                  >
+                    Batal
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={isSavingProfile}
+                  >
+                    {isSavingProfile ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
       )}
     </>
