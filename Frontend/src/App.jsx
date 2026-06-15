@@ -116,6 +116,35 @@ function App() {
     }
   }, [isLoggedIn, userRole, activeMenu, token]);
 
+  // Fetch Guru Dashboard Stats
+  useEffect(() => {
+    if (isLoggedIn && userRole === 'guru' && activeMenu === 'dashboard') {
+      const fetchGuruStats = async () => {
+        try {
+          const res = await fetch(`${API_URL}/guru/dashboard`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          })
+
+          if (!res.ok) {
+            throw new Error('Gagal mengambil data dashboard guru')
+          }
+
+          const data = await res.json()
+
+          setGuruKelasDiampuCount(data.kelas_diampu || 0)
+          setGuruSesiBerjalanCount(data.sesi_berjalan || 0)
+          setGuruBelumDinilaiCount(data.siswa_belum_dapat_nilai || 0)
+        } catch (err) {
+          console.error('Failed to fetch guru dashboard stats:', err)
+        }
+      }
+
+      fetchGuruStats()
+    }
+  }, [isLoggedIn, userRole, activeMenu, token])
+
   // Fetch Siswa Dashboard Stats
   useEffect(() => {
     if (isLoggedIn && userRole === 'siswa' && activeMenu === 'dashboard') {
@@ -363,52 +392,39 @@ function App() {
       case 'dashboard':
         return (
           <>
-            <div className="welcome-banner" style={{ background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)' }}>
-              <h2 className="welcome-title">Selamat Datang, {displayName}!</h2>
-              <p className="welcome-desc">
-                Ruang Kerja Guru - Smart Learning OHM. Di sini Anda dapat memantau pengerjaan kuis siswa, memberikan penilaian analisis laporan praktikum, serta membuat sesi soal baru.
-              </p>
-            </div>
+            <h2>Selamat Datang, {displayName}!</h2>
+            <p>
+              Ruang Kerja Guru - Smart Learning OHM. Di sini Anda dapat memantau
+              kelas yang diampu, sesi soal yang masih berjalan, dan siswa yang belum
+              mendapatkan nilai.
+            </p>
 
-            {/* Quick stats placeholder for guru */}
             <div className="stats-grid">
-              <div className="stat-card stat-card-guru">
-                <div className="stat-card-details">
-                  <span className="stat-card-title">Kelas Diampu</span>
-                  <span className="stat-card-number">2</span>
-                </div>
-                <div className="stat-card-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                  </svg>
-                </div>
+              <div
+                className="stat-card"
+                onClick={() => setActiveMenu('sesi_soal')}
+                style={{ cursor: 'pointer' }}
+              >
+                <h3>Kelas yang Diampu</h3>
+                <p className="stat-number">{guruKelasDiampuCount}</p>
               </div>
 
-              <div className="stat-card stat-card-murid">
-                <div className="stat-card-details">
-                  <span className="stat-card-title">Siswa Aktif</span>
-                  <span className="stat-card-number">38</span>
-                </div>
-                <div className="stat-card-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
-                  </svg>
-                </div>
+              <div
+                className="stat-card"
+                onClick={() => setActiveMenu('sesi_soal')}
+                style={{ cursor: 'pointer' }}
+              >
+                <h3>Sesi Masih Berjalan</h3>
+                <p className="stat-number">{guruSesiBerjalanCount}</p>
               </div>
 
-              <div className="stat-card stat-card-kelas">
-                <div className="stat-card-details">
-                  <span className="stat-card-title">Perlu Dinilai</span>
-                  <span className="stat-card-number">5</span>
-                </div>
-                <div className="stat-card-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                  </svg>
-                </div>
+              <div
+                className="stat-card"
+                onClick={() => setActiveMenu('penilaian')}
+                style={{ cursor: 'pointer' }}
+              >
+                <h3>Siswa Belum Dapat Nilai</h3>
+                <p className="stat-number">{guruBelumDinilaiCount}</p>
               </div>
             </div>
           </>

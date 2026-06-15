@@ -1170,6 +1170,116 @@ app.get('/api/penilaian/rekap', authenticateToken, async (req, res) => {
   }
 });
 
+// GET Dashboard Guru
+app.get('/api/guru/dashboard', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'guru') {
+    return res.status(403).json({ message: 'Akses ditolak.' });
+  }
+
+  try {
+    const idGuru = req.user.id;
+
+    // 1. Ambil kelas yang diampu guru
+    const { data: kelasData, error: kelasError } = await supabase
+      .from('kelas')
+      .select('id_kelas, nama_kelas')
+      .eq('id_guru', idGuru);
+
+    if (kelasError) throw kelasError;
+
+    const kelasIds = kelasData ? kelasData.map((kelas) => kelas.id_kelas) : [];
+
+    if (kelasIds.length === 0) {
+      return res.json({
+        kelas_diampu: 0,
+        sesi_berjalan: 0,
+        siswa_belum_dapat_nilai: 0
+      });
+    }
+
+    // 2. Ambil semua sesi dari kelas yang diampu
+    const { data: sesiData, error: sesiError } = await supabase
+      .from('sesi')
+      .select('id_sesi, id_kelas, tipe, tenggang_waktu')
+      .in('id_kelas', kelasIds);
+
+    if (sesiError) throw sesiError;
+
+    const sesi = sesiData || [];
+
+    // Waktu lokal Jakarta agar sesuai dengan format tenggang_waktu
+    const d = new Date();
+    const offset = 7 * 60 * 60 * 1000;
+    const localDate = new Date(d.getTime() + offset);
+    const now = localDate.toISOString().replace('Z', '');
+
+    const sesiBerjalan = sesi.filter((item) => {
+      return item.tenggang_waktu && item.tenggang_waktu >= now;
+    });
+
+    const sesiSelesai = sesi.filter((item) => {
+      return item.tenggang_waktu && item.tenggang_waktu < now;
+    });
+
+    // 3. Ambil siswa dari kelas yang diampu
+    const { data: siswaData, error: siswaError } = await supabase
+      .from('siswa')
+      .select('id_siswa, id_kelas')
+      .in('id_kelas', kelasIds);
+
+    if (siswaError) throw siswaError;
+
+    const siswa = siswaData || [];
+    const sesiSelesaiIds = sesiSelesai.map((item) => item.id_sesi);
+
+    let nilaiData = [];
+
+    if (sesiSelesaiIds.length > 0) {
+      const { data: nilai, error: nilaiError } = await supabase
+        .from('nilai_siswa')
+        .select('id_sesi, id_siswa, nilai_total')
+        .in('id_sesi', sesiSelesaiIds);
+
+      if (nilaiError) throw nilaiError;
+
+      nilaiData = nilai || [];
+    }
+
+    // 4. Hitung siswa yang belum mendapat nilai berdasarkan nilai_total
+    const nilaiKeys = new Set(
+      nilaiData
+        .filter((nilai) => nilai.nilai_total !== null && nilai.nilai_total !== undefined)
+        .map((nilai) => `${nilai.id_sesi}-${nilai.id_siswa}`)
+    );
+
+    let siswaBelumDapatNilai = 0;
+
+    sesiSelesai.forEach((sesiItem) => {
+      const siswaDalamKelas = siswa.filter(
+        (siswaItem) => siswaItem.id_kelas === sesiItem.id_kelas
+      );
+
+      siswaDalamKelas.forEach((siswaItem) => {
+        const key = `${sesiItem.id_sesi}-${siswaItem.id_siswa}`;
+
+        if (!nilaiKeys.has(key)) {
+          siswaBelumDapatNilai += 1;
+        }
+      });
+    });
+
+    return res.json({
+      kelas_diampu: kelasData.length,
+      sesi_berjalan: sesiBerjalan.length,
+      siswa_belum_dapat_nilai: siswaBelumDapatNilai
+    });
+  } catch (error) {
+    console.error('Error fetching guru dashboard:', error);
+    return res.status(500).json({
+      message: 'Gagal mengambil data dashboard guru.'
+    });
+  }
+});
 
 // GET Daftar Siswa per Sesi untuk Penilaian
 app.get('/api/penilaian/sesi/:id_sesi/siswa', authenticateToken, async (req, res) => {
