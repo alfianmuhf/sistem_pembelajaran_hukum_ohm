@@ -35,6 +35,11 @@ function App() {
   const [guruInactiveCount, setGuruInactiveCount] = useState(0)
   const [kelasCount, setKelasCount] = useState(0)
 
+  // Dosen Dashboard Stats
+  const [guruKelasDiampuCount, setGuruKelasDiampuCount] = useState(0)
+  const [guruSesiBerjalanCount, setGuruSesiBerjalanCount] = useState(0)
+  const [guruBelumDinilaiCount, setGuruBelumDinilaiCount] = useState(0)
+
   // Siswa Dashboard Stats
   const [siswaActiveSesiCount, setSiswaActiveSesiCount] = useState(0)
   const [siswaTotalNilaiCount, setSiswaTotalNilaiCount] = useState(0)
