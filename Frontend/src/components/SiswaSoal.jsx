@@ -71,6 +71,7 @@ const SiswaSoal = () => {
         if (data.topic === 'ohm/sensor/status') {
           setIsIotConnected(data.payload === 'online');
         } else if (data.topic === 'ohm/sensor/data') {
+          setIsIotConnected(true); // Auto-recover status if data is flowing
           const sensorData = JSON.parse(data.payload);
           setSuhuSensor(sensorData.suhu);
           

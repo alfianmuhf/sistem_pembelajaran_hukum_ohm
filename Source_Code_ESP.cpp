@@ -165,8 +165,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    String clientId = "ESP32Client-";
-    clientId += String(random(0xffff), HEX);
+    // Gunakan Client ID statis agar koneksi lama langsung ditendang dan mencegah Ghost LWT
+    String clientId = "ESP32-Ohm-Law-Device";
     
     // Connect with LWT (Last Will and Testament)
     if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass, topic_status, 1, true, "offline")) {
