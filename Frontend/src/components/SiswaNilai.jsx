@@ -164,7 +164,7 @@ export default function SiswaNilai() {
       {/* POPUP DETAIL JAWABAN */}
       {selectedSesi && (
         <div className="modal-overlay" onClick={closeDetail}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1000px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="modal-header">
               <h3>Detail Jawaban - Sesi {selectedSesi.sesi} {selectedSesi.tipe?.toLowerCase() === 'remidi' ? '(Remidi)' : ''}</h3>
               <button className="modal-close" onClick={closeDetail}>
@@ -214,59 +214,62 @@ export default function SiswaNilai() {
                         
                         return (
                           <div key={soal.id_soal} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Soal {index + 1}</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '12px', fontSize: '15px' }}>Soal {index + 1}</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '20px', alignItems: 'stretch' }}>
                               
-                              {/* Kolom Teori */}
-                              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px' }}>
-                                <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--primary)' }}>Perhitungan Teori</div>
-                                <div style={{ fontSize: '13px', marginBottom: '4px' }}>Target: <strong>{soal.volt} V</strong> / <strong>{soal.ohm} Ω</strong></div>
-                                <div style={{ fontSize: '13px' }}>Jawaban Anda: <strong>{j_teori?.jawaban_soal ?? '-'} A</strong></div>
-                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Kunci: {soal.ampere} A (Toleransi ±0.01)</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {/* Kolom Teori */}
+                                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                  <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--primary)' }}>Perhitungan Teori</div>
+                                  <div style={{ fontSize: '13px', marginBottom: '4px' }}>Target: <strong>{soal.volt} V</strong> / <strong>{soal.ohm} Ω</strong></div>
+                                  <div style={{ fontSize: '13px' }}>Jawaban Anda: <strong>{j_teori?.jawaban_soal ?? '-'} A</strong></div>
+                                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Kunci: {soal.ampere} A (Toleransi ±0.01)</div>
+                                </div>
+
+                                {/* Kolom Praktikum */}
+                                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                  <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--accent)' }}>Pembacaan Praktikum IoT</div>
+                                  <div style={{ fontSize: '13px', marginBottom: '4px' }}>Volt Sensor: <strong>{j_praktikum?.volt_sensor ?? '-'} V</strong></div>
+                                  <div style={{ fontSize: '13px', marginBottom: '4px' }}>Ohm Target: <strong>{j_praktikum?.ohm_sensor ?? '-'} Ω</strong></div>
+                                  <div style={{ fontSize: '13px' }}>Ampere Sensor: <strong>{j_praktikum?.ampere_sensor ?? '-'} A</strong></div>
+                                </div>
                               </div>
 
-                              {/* Kolom Praktikum */}
-                              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px' }}>
-                                <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--accent)' }}>Pembacaan Praktikum IoT</div>
-                                <div style={{ fontSize: '13px', marginBottom: '4px' }}>Volt Sensor: <strong>{j_praktikum?.volt_sensor ?? '-'} V</strong></div>
-                                <div style={{ fontSize: '13px', marginBottom: '4px' }}>Ohm Target: <strong>{j_praktikum?.ohm_sensor ?? '-'} Ω</strong></div>
-                                <div style={{ fontSize: '13px' }}>Ampere Sensor: <strong>{j_praktikum?.ampere_sensor ?? '-'} A</strong></div>
+                              {/* CHART PERBANDINGAN */}
+                              <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+                                <h5 style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#475569', textAlign: 'center' }}>Grafik Perbandingan (Target {soal.ohm} Ω)</h5>
+                                <div style={{ flex: 1, minHeight: '200px' }}>
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart 
+                                      data={[
+                                        {
+                                          name: 'Jawaban Teori',
+                                          Tegangan: parseFloat(soal.volt) || 0,
+                                          Arus: parseFloat(j_teori?.jawaban_soal) || 0,
+                                        },
+                                        {
+                                          name: 'Hasil Praktikum',
+                                          Tegangan: parseFloat(j_praktikum?.volt_sensor) || 0,
+                                          Arus: parseFloat(j_praktikum?.ampere_sensor) || 0,
+                                        }
+                                      ]} 
+                                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                    >
+                                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                      <XAxis dataKey="name" tick={{fontSize: 13, fontWeight: 600, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                      <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
+                                      <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
+                                      <Tooltip 
+                                        contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                                        cursor={{fill: '#f8fafc'}}
+                                      />
+                                      <Legend wrapperStyle={{fontSize: '13px', paddingTop: '10px'}} />
+                                      <Bar yAxisId="left" dataKey="Tegangan" name="Tegangan (V)" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                                      <Bar yAxisId="right" dataKey="Arus" name="Arus (A)" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
                               </div>
-
-                            </div>
-
-                            {/* CHART PERBANDINGAN */}
-                            <div style={{ marginTop: '24px', background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                              <h5 style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#475569', textAlign: 'center' }}>Grafik Perbandingan (Target {soal.ohm} Ω)</h5>
-                              <ResponsiveContainer width="100%" height={250}>
-                                <BarChart 
-                                  data={[
-                                    {
-                                      name: 'Jawaban Teori',
-                                      Tegangan: parseFloat(soal.volt) || 0,
-                                      Arus: parseFloat(j_teori?.jawaban_soal) || 0,
-                                    },
-                                    {
-                                      name: 'Hasil Praktikum',
-                                      Tegangan: parseFloat(j_praktikum?.volt_sensor) || 0,
-                                      Arus: parseFloat(j_praktikum?.ampere_sensor) || 0,
-                                    }
-                                  ]} 
-                                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                                >
-                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                  <XAxis dataKey="name" tick={{fontSize: 13, fontWeight: 600, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                                  <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
-                                  <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
-                                  <Tooltip 
-                                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
-                                    cursor={{fill: '#f8fafc'}}
-                                  />
-                                  <Legend wrapperStyle={{fontSize: '13px', paddingTop: '10px'}} />
-                                  <Bar yAxisId="left" dataKey="Tegangan" name="Tegangan (V)" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
-                                  <Bar yAxisId="right" dataKey="Arus" name="Arus (A)" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={60} />
-                                </BarChart>
-                              </ResponsiveContainer>
                             </div>
                           </div>
                         );
