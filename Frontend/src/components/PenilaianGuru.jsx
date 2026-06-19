@@ -561,13 +561,13 @@ const PenilaianGuru = () => {
                           const prak = detailData.praktikum.find(p => p.id_soal === soal.id_soal);
                           return (
                             <div key={soal.id_soal} style={{ fontSize: '13px', background: '#fff', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid #e2e8f0' }}>
-                              <div style={{ marginBottom: '6px' }}><strong>Target Soal {idx + 1}:</strong> {soal.volt}V, {soal.ohm}Ω, {soal.ampere} mA</div>
+                              <div style={{ marginBottom: '6px' }}><strong>Target Soal {idx + 1}:</strong> {soal.volt}V, {soal.ohm}Ω, {soal.ampere} A</div>
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', color: 'var(--text-medium)' }}>
                                 <div style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>
-                                  V: {prak?.volt ?? '-'}
+                                  V: {prak?.volt_sensor ?? '-'}
                                 </div>
                                 <div style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>
-                                  mA: {prak?.ampere ?? '-'}
+                                  A: {prak?.ampere_sensor ?? '-'}
                                 </div>
                               </div>
                             </div>
