@@ -251,8 +251,8 @@ void setup()
     digitalWrite(ledPins[i], LOW);
   }
 
-  // resistor default = 220 ohm
-  pilihResistor(0);
+  // resistor default = dimatikan (standby) menunggu perintah dari web
+  matikanResistor();
 
   // ADC
   analogReadResolution(12);

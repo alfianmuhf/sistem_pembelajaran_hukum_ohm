@@ -229,7 +229,7 @@ const SiswaSoal = () => {
   };
 
   // Mock Start/Stop Praktikum per question
-  const toggleSimulasi = (id_soal) => {
+  const toggleSimulasi = (id_soal, targetOhm) => {
     if (!isIotConnected) {
       showToast("ESP32 Offline! Pastikan alat menyala dan terhubung WiFi.", "warning");
       return;
@@ -237,23 +237,32 @@ const SiswaSoal = () => {
     
     const isStarting = !isSimulating[id_soal];
 
-    if (isStarting && selectedOhmESP[id_soal]) {
-       // If starting, send the current dropdown value to ESP
+    if (isStarting) {
+       // Stop all other simulations before starting a new one
        if (wsRef.current && wsRef.current.readyState === 1) {
-         wsRef.current.send(JSON.stringify({ action: 'set_resistor', value: selectedOhmESP[id_soal] }));
+         wsRef.current.send(JSON.stringify({ action: 'set_resistor', value: targetOhm.toString() }));
        }
-    } else if (!isStarting) {
+       
+       setIsSimulating(prev => {
+         const newSims = {};
+         // Set all other simulations to false
+         Object.keys(prev).forEach(key => newSims[key] = false);
+         newSims[id_soal] = true;
+         isSimulatingRef.current = newSims;
+         return newSims;
+       });
+       showToast(`Praktikum dimulai. Mengatur resistor ESP32 ke ${targetOhm} ohm`, "info");
+    } else {
        // If stopping, tell ESP to turn off resistor to save power
        if (wsRef.current && wsRef.current.readyState === 1) {
          wsRef.current.send(JSON.stringify({ action: 'set_resistor', value: '0' }));
        }
+       setIsSimulating(prev => {
+         const updated = { ...prev, [id_soal]: false };
+         isSimulatingRef.current = updated;
+         return updated;
+       });
     }
-
-    setIsSimulating(prev => {
-      const updated = { ...prev, [id_soal]: isStarting };
-      isSimulatingRef.current = updated;
-      return updated;
-    });
   };
 
   // API Save Handlers
@@ -281,11 +290,10 @@ const SiswaSoal = () => {
     }
   };
 
-  const handleSavePraktikum = async (id_soal) => {
+  const simpanDataIoT = async (id_soal, soalOhm) => {
     const pData = praktikumAnswers[id_soal];
-    const targetOhm = selectedOhmESP[id_soal];
-    if (!pData.volt || !pData.ampere || !targetOhm) {
-      showToast('Silakan lengkapi data volt, ampere, dan ohm terlebih dahulu.', 'warning');
+    if (!pData.volt || !pData.ampere) {
+      showToast('Silakan lengkapi data volt dan ampere terlebih dahulu.', 'warning');
       return;
     }
     setIsSavingPraktikum(prev => ({ ...prev, [id_soal]: true }));
@@ -295,7 +303,7 @@ const SiswaSoal = () => {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id_soal, volt_sensor: parseFloat(pData.volt), ohm_sensor: parseFloat(targetOhm), ampere_sensor: parseFloat(pData.ampere)
+          id_soal, volt_sensor: parseFloat(pData.volt), ohm_sensor: parseFloat(soalOhm), ampere_sensor: parseFloat(pData.ampere)
         })
       });
       const data = await res.json();
@@ -576,34 +584,37 @@ const SiswaSoal = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           Target Soal {index + 1}
-                          <span style={{ fontSize: '12px', background: 'var(--background)', padding: '2px 8px', borderRadius: '10px', color: 'var(--text-medium)', fontWeight: 'normal' }}>
-                            R: {item.ohm}Ω | V: {item.volt}V
-                          </span>
                         </h4>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <select 
-                            className="form-input" 
-                            style={{ padding: '6px 24px 6px 10px', fontSize: '12px', height: 'auto', backgroundPosition: 'right 6px center', width: 'auto' }}
-                            value={selectedOhmESP[item.id_soal] || ''}
-                            onChange={(e) => handleOhmChange(item.id_soal, e.target.value)}
-                            disabled={simulating}
-                          >
-                            <option value="220">220 Ω</option>
-                            <option value="330">330 Ω</option>
-                            <option value="470">470 Ω</option>
-                            <option value="680">680 Ω</option>
-                          </select>
-                          <button 
-                            className={simulating ? "btn-secondary" : "btn-primary"} 
-                            style={simulating ? { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'transparent', padding: '6px 12px', fontSize: '12px' } : { background: 'var(--success)', padding: '6px 12px', fontSize: '12px' }}
-                            onClick={() => toggleSimulasi(item.id_soal)}
-                          >
-                            {simulating ? 'Stop Pembacaan' : 'Start Praktikum'}
-                          </button>
+                        
+                        {/* Dropdown Resistor ESP32 Dihapus Sesuai Permintaan */}
+                        <div style={{
+                          display: 'inline-block',
+                          padding: '6px 12px',
+                          backgroundColor: 'var(--background)',
+                          borderRadius: '8px',
+                          color: 'var(--primary)',
+                          fontWeight: '600',
+                          border: '1px solid var(--border)',
+                          marginLeft: '12px'
+                        }}>
+                          ESP32 di-set ke: {item.ohm} Ω
                         </div>
                       </div>
                       
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <div className="simulation-actions" style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <button 
+                          className={`btn ${simulating ? 'btn-danger' : 'btn-primary'}`}
+                          onClick={() => toggleSimulasi(item.id_soal, item.ohm)}
+                          style={{ 
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            backgroundColor: simulating ? '#ef4444' : 'var(--primary)'
+                          }}
+                        >
+                          {simulating ? 'Stop Pembacaan' : 'Start Praktikum'}
+                        </button>
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px', marginBottom: '12px' }}>
                         <div>
                           <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-medium)', display: 'block', marginBottom: '8px' }}>Volt (Sensor)</label>
                           <div style={{ position: 'relative' }}>
@@ -646,10 +657,10 @@ const SiswaSoal = () => {
                           </span>
                         </div>
                         <button 
-                          className="btn-primary" 
-                          onClick={() => handleSavePraktikum(item.id_soal)}
-                          disabled={isSavingPraktikum[item.id_soal] || !isIotConnected || !simulating}
-                          style={{ padding: '8px 16px', fontSize: '13px', opacity: (!isIotConnected || !simulating) ? 0.5 : 1, cursor: (!isIotConnected || !simulating) ? 'not-allowed' : 'pointer' }}
+                          className="btn btn-outline" 
+                          onClick={() => simpanDataIoT(item.id_soal, item.ohm)}
+                          disabled={!simulating || isSavingPraktikum[item.id_soal]}
+                          style={{ padding: '8px 16px', fontSize: '13px' }}
                         >
                           {isSavingPraktikum[item.id_soal] ? 'Loading...' : 'Simpan Jawaban'}
                         </button>
