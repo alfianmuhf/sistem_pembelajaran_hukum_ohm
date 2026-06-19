@@ -602,16 +602,9 @@ const SiswaSoal = () => {
                       
                       <div className="simulation-actions" style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <button 
-                          className={`btn ${simulating ? 'btn-danger' : 'btn-success'}`}
+                          className={simulating ? 'btn-danger' : 'btn-success'}
                           onClick={() => toggleSimulasi(item.id_soal, item.ohm)}
-                          style={{ 
-                            display: 'flex', alignItems: 'center', gap: '8px',
-                            padding: '8px 16px', fontSize: '13px',
-                            backgroundColor: simulating ? 'transparent' : 'var(--success)',
-                            color: simulating ? 'var(--danger)' : '#fff',
-                            border: simulating ? '2px solid var(--danger)' : 'none',
-                            fontWeight: '600'
-                          }}
+                          style={{ padding: '8px 16px', fontSize: '13px' }}
                         >
                           {simulating ? '⏹ Stop Praktikum' : '▶ Start Praktikum'}
                         </button>
@@ -660,7 +653,7 @@ const SiswaSoal = () => {
                           </span>
                         </div>
                         <button 
-                          className="btn btn-outline" 
+                          className="btn-primary" 
                           onClick={() => simpanDataIoT(item.id_soal, item.ohm)}
                           disabled={!simulating || isSavingPraktikum[item.id_soal]}
                           style={{ padding: '8px 16px', fontSize: '13px' }}
