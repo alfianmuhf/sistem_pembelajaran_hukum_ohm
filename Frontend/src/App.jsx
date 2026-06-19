@@ -871,7 +871,7 @@ function App() {
       {toast.show && (
         <div style={{
           position: 'fixed',
-          top: '24px',
+          bottom: '24px',
           right: '24px',
           background: toast.type === 'danger' ? 'var(--danger)' : toast.type === 'warning' ? 'var(--warning)' : 'var(--success)',
           color: '#fff',
