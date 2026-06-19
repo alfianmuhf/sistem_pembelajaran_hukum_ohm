@@ -1543,8 +1543,13 @@ mqttClient.on('error', (err) => {
 // 2. Setup WebSocket Server on the same HTTP server
 const wss = new WebSocketServer({ server });
 
+let lastKnownStatus = 'offline';
+
 wss.on('connection', (ws) => {
   console.log('New WebSocket Client Connected');
+  
+  // Immediately send the last known IoT status to the newly connected web client
+  ws.send(JSON.stringify({ topic: 'ohm/sensor/status', payload: lastKnownStatus }));
 
   // Handle messages from Frontend (Siswa)
   ws.on('message', (message) => {
@@ -1568,6 +1573,11 @@ wss.on('connection', (ws) => {
 // 3. Bridge MQTT messages to WebSockets
 mqttClient.on('message', (topic, message) => {
   const payload = message.toString();
+  
+  if (topic === 'ohm/sensor/status') {
+    lastKnownStatus = payload;
+  }
+
   // Broadcast to all active WebSocket clients
   wss.clients.forEach((client) => {
     if (client.readyState === 1) { // WebSocket.OPEN
