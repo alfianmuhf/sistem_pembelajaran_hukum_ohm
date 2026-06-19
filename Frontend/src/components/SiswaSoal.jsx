@@ -606,6 +606,7 @@ const SiswaSoal = () => {
                           onClick={() => toggleSimulasi(item.id_soal, item.ohm)}
                           style={{ 
                             display: 'flex', alignItems: 'center', gap: '8px',
+                            padding: '8px 16px', fontSize: '13px',
                             backgroundColor: simulating ? 'transparent' : 'var(--success)',
                             color: simulating ? 'var(--danger)' : '#fff',
                             border: simulating ? '2px solid var(--danger)' : 'none',
