@@ -55,6 +55,15 @@ function App() {
     password_baru: ''
   });
 
+  // Toast Notification State
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 3000);
+  };
+
   // Verify token on load to support session persistence
   useEffect(() => {
     const verifySession = async () => {
@@ -305,7 +314,7 @@ function App() {
       setUsername(data.user.username);
 
       closeProfileModal();
-      alert('Profil berhasil diperbarui.');
+      showToast('Password berhasil diubah', 'success');
     } catch (err) {
       setProfileError(err.message || 'Terjadi kesalahan saat menyimpan profil.');
     } finally {
@@ -855,6 +864,27 @@ function App() {
               </form>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          background: toast.type === 'danger' ? 'var(--danger)' : toast.type === 'warning' ? 'var(--warning)' : 'var(--success)',
+          color: '#fff',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          animation: 'slideInRight 0.3s ease-out'
+        }}>
+          <span style={{ fontWeight: 600, fontSize: '14px' }}>{toast.message}</span>
         </div>
       )}
     </>
