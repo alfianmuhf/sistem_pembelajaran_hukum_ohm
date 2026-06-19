@@ -103,12 +103,21 @@ export default function SiswaNilai() {
                 </tr>
               </thead>
               <tbody>
-                {sesiList.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-light)' }}>Belum ada data nilai / Anda belum mengerjakan kuis.</td>
-                  </tr>
-                ) : (
-                  sesiList.map(sesi => (
+                {(() => {
+                  const d = new Date();
+                  const offset = 7 * 60 * 60 * 1000;
+                  const now = new Date(d.getTime() + offset).toISOString().slice(0, 16);
+                  const finishedSesiList = sesiList.filter(s => s.tenggang_waktu && s.tenggang_waktu < now);
+                  
+                  if (finishedSesiList.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-light)' }}>Belum ada data nilai dari sesi yang sudah selesai.</td>
+                      </tr>
+                    );
+                  }
+                  
+                  return finishedSesiList.map(sesi => (
                     <tr key={sesi.id_sesi}>
                       <td>
                         <strong style={{ color: 'var(--text-main)' }}>Sesi {sesi.sesi}</strong>
@@ -144,8 +153,8 @@ export default function SiswaNilai() {
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
