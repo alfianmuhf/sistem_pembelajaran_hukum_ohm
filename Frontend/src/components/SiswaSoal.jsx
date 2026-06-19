@@ -108,6 +108,18 @@ const SiswaSoal = () => {
     };
   }, []);
 
+  // Force stop simulations if IoT disconnects
+  useEffect(() => {
+    if (!isIotConnected) {
+      const isAnySimulating = Object.values(isSimulatingRef.current).some(val => val === true);
+      if (isAnySimulating) {
+        setIsSimulating({});
+        isSimulatingRef.current = {};
+        showToast("Koneksi IoT terputus! Praktikum dihentikan otomatis.", "danger");
+      }
+    }
+  }, [isIotConnected]);
+
   useEffect(() => {
     const fetchSessions = async () => {
       setIsLoading(true);
@@ -222,15 +234,22 @@ const SiswaSoal = () => {
       return;
     }
     
-    // If starting, send the current dropdown value to ESP
-    if (!isSimulating[id_soal] && selectedOhmESP[id_soal]) {
+    const isStarting = !isSimulating[id_soal];
+
+    if (isStarting && selectedOhmESP[id_soal]) {
+       // If starting, send the current dropdown value to ESP
        if (wsRef.current && wsRef.current.readyState === 1) {
          wsRef.current.send(JSON.stringify({ action: 'set_resistor', value: selectedOhmESP[id_soal] }));
+       }
+    } else if (!isStarting) {
+       // If stopping, tell ESP to turn off resistor to save power
+       if (wsRef.current && wsRef.current.readyState === 1) {
+         wsRef.current.send(JSON.stringify({ action: 'set_resistor', value: '0' }));
        }
     }
 
     setIsSimulating(prev => {
-      const updated = { ...prev, [id_soal]: !prev[id_soal] };
+      const updated = { ...prev, [id_soal]: isStarting };
       isSimulatingRef.current = updated;
       return updated;
     });

@@ -111,6 +111,18 @@ void pilihResistor(int index)
   Serial.println(" ohm");
 }
 
+void matikanResistor()
+{
+  resistorAktif = -1;
+  for (int i = 0; i < 4; i++)
+  {
+    digitalWrite(transistorPins[i], LOW);
+    digitalWrite(ledPins[i], LOW);
+  }
+  Serial.println();
+  Serial.println("Semua resistor dimatikan (Standby)");
+}
+
 void setupWifi() {
   delay(10);
   Serial.println();
@@ -146,6 +158,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     else if (msg == "330") pilihResistor(1);
     else if (msg == "470") pilihResistor(2);
     else if (msg == "680") pilihResistor(3);
+    else if (msg == "0" || msg == "stop") matikanResistor();
   }
 }
 
@@ -247,6 +260,7 @@ void setup()
 
   // DS18B20
   sensors.begin();
+  sensors.setWaitForConversion(false); // Non-blocking temperature read
 
   // I2C
   Wire.begin(SDA_PIN, SCL_PIN);
@@ -278,7 +292,7 @@ void loop()
     float suhu = bacaSuhu();
     float tegangan = bacaTegangan();
     float arus_mA = bacaArus_mA();
-    float resistor = resistorValue[resistorAktif];
+    float resistor = resistorAktif >= 0 ? resistorValue[resistorAktif] : 0.0;
 
     // Format JSON String manually
     char payload[150];
