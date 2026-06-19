@@ -585,8 +585,6 @@ const SiswaSoal = () => {
                         <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           Target Soal {index + 1}
                         </h4>
-                        
-                        {/* Dropdown Resistor ESP32 Dihapus Sesuai Permintaan */}
                         <div style={{
                           display: 'inline-block',
                           padding: '6px 12px',
@@ -595,22 +593,26 @@ const SiswaSoal = () => {
                           color: 'var(--primary)',
                           fontWeight: '600',
                           border: '1px solid var(--border)',
-                          marginLeft: '12px'
+                          marginLeft: '12px',
+                          fontSize: '12px'
                         }}>
-                          ESP32 di-set ke: {item.ohm} Ω
+                          Resistor : {item.ohm} Ω
                         </div>
                       </div>
                       
                       <div className="simulation-actions" style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <button 
-                          className={`btn ${simulating ? 'btn-danger' : 'btn-primary'}`}
+                          className={`btn ${simulating ? 'btn-danger' : 'btn-success'}`}
                           onClick={() => toggleSimulasi(item.id_soal, item.ohm)}
                           style={{ 
                             display: 'flex', alignItems: 'center', gap: '8px',
-                            backgroundColor: simulating ? '#ef4444' : 'var(--primary)'
+                            backgroundColor: simulating ? 'transparent' : 'var(--success)',
+                            color: simulating ? 'var(--danger)' : '#fff',
+                            border: simulating ? '2px solid var(--danger)' : 'none',
+                            fontWeight: '600'
                           }}
                         >
-                          {simulating ? 'Stop Pembacaan' : 'Start Praktikum'}
+                          {simulating ? '⏹ Stop Praktikum' : '▶ Start Praktikum'}
                         </button>
                       </div>
                       
