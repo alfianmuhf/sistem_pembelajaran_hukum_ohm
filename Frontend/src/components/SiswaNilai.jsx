@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 const API_URL = import.meta.env.VITE_API_URL || 'https://sistempembelajaranhukumohm-production.up.railway.app/api';
 
 export default function SiswaNilai() {
@@ -233,6 +233,40 @@ export default function SiswaNilai() {
                                 <div style={{ fontSize: '13px' }}>Ampere Sensor: <strong>{j_praktikum?.ampere_sensor ?? '-'} A</strong></div>
                               </div>
 
+                            </div>
+
+                            {/* CHART PERBANDINGAN */}
+                            <div style={{ marginTop: '24px', background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                              <h5 style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#475569', textAlign: 'center' }}>Grafik Perbandingan (Target {soal.ohm} Ω)</h5>
+                              <ResponsiveContainer width="100%" height={250}>
+                                <BarChart 
+                                  data={[
+                                    {
+                                      name: 'Jawaban Teori',
+                                      Tegangan: parseFloat(soal.volt) || 0,
+                                      Arus: parseFloat(j_teori?.jawaban_soal) || 0,
+                                    },
+                                    {
+                                      name: 'Hasil Praktikum',
+                                      Tegangan: parseFloat(j_praktikum?.volt_sensor) || 0,
+                                      Arus: parseFloat(j_praktikum?.ampere_sensor) || 0,
+                                    }
+                                  ]} 
+                                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                  <XAxis dataKey="name" tick={{fontSize: 13, fontWeight: 600, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                  <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
+                                  <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
+                                  <Tooltip 
+                                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                                    cursor={{fill: '#f8fafc'}}
+                                  />
+                                  <Legend wrapperStyle={{fontSize: '13px', paddingTop: '10px'}} />
+                                  <Bar yAxisId="left" dataKey="Tegangan" name="Tegangan (V)" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                                  <Bar yAxisId="right" dataKey="Arus" name="Arus (A)" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                                </BarChart>
+                              </ResponsiveContainer>
                             </div>
                           </div>
                         );
