@@ -72,6 +72,14 @@ Sistem ini menggunakan Supabase sebagai layanan *Database as a Service* (DBaaS).
    - Kolom: `id_sesi` (PK), `id_kelas` (FK), `id_sesi_sebelum` (FK *Self-referencing* untuk Remidi), `sesi` (Auto-numbering Sesi 1, 2, dst), `tipe` (Utama / Remidi), `tanggal_pembuatan`, `tenggang_waktu` (Timestamp).
 6. **`soal`**:
    - Kolom: `id_soal` (PK), `id_sesi` (FK), `id_siswa` (FK), `ohm`, `volt`, `ampere`.
+7. **`jawaban_soal_siswa`**:
+   - Kolom: `id_jawaban_soal_siswa` (PK), `id_soal` (FK), `jawaban_soal`. (Hanya terisi jika siswa menyimpan perhitungan Teori).
+8. **`jawaban_praktikum_siswa`**:
+   - Kolom: `id_jawaban_praktikum_siswa` (PK), `id_soal` (FK), `ohm_sensor`, `volt_sensor`, `ampere_sensor`. (Hanya terisi jika siswa menyimpan data Praktikum).
+9. **`jawaban_analisis_siswa`**:
+   - Kolom: `id_jawaban_analisis_siswa` (PK), `id_sesi` (FK), `id_siswa` (FK), `analisis_siswa`. (Laporan teks kesimpulan).
+10. **`nilai_siswa`**:
+   - Kolom: `id_nilai_siswa` (PK), `id_sesi` (FK), `id_siswa` (FK), `nilai_soal` (Auto-graded), `nilai_praktikum` (Manual dari Guru), `nilai_analisis` (Manual dari Guru), `nilai_total` (Kalkulasi rata-rata).
 
 ## 4. Tema Desain Frontend (UI/UX)
 Antarmuka pengguna (UI) dibangun dengan orientasi **Premium Design**:

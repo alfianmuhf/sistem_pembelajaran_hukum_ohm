@@ -65,7 +65,6 @@ const float ADC_REF = 3.3;
 const int ADC_MAX = 4095;
 
 const float VOLTAGE_FACTOR = 5.0;
-const float CALIBRATION_FACTOR = 1.067;
 
 // =====================================================
 // AKTIFKAN RESISTOR
@@ -140,9 +139,7 @@ float bacaTegangan()
       (adcRaw * ADC_REF) / ADC_MAX;
 
   float inputVoltage =
-      adcVoltage *
-      VOLTAGE_FACTOR *
-      CALIBRATION_FACTOR;
+      adcVoltage * VOLTAGE_FACTOR;
 
   return inputVoltage;
 }
